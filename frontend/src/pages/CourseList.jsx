@@ -1,145 +1,132 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import API from "../api";
-import { useNavigate, useParams } from "react-router-dom";
 
-export default function CourseForm({ edit = false, onToast }) {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    category: "other",
-  });
-  const [videos, setVideos] = useState([]); // 🎥 store multiple videos
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { id } = useParams();
+export default function CourseList() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-  // 🧠 Load existing course if editing
-  useEffect(() => {
-    if (edit && id) {
-      API.get(`courses/${id}/`).then(({ data }) => setForm(data));
-    }
-  }, [edit, id]);
-
-  // 📥 Handle basic form fields
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  // 🎥 Handle video uploads
-  const handleVideoChange = (e) => {
-    setVideos(Array.from(e.target.files)); // multiple file support
-  };
-
-  // 🧾 Submit handler for both course + videos
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
+  // 🔄 Fetch all courses
+  const fetchCourses = async () => {
     try {
-      let courseId = id;
-
-      if (edit) {
-        // ✏️ Update existing course
-        await API.put(`courses/${id}/`, form);
-      } else {
-        // ➕ Create new course
-        const { data } = await API.post("courses/", form);
-        courseId = data.id;
-      }
-
-      // 🎬 Upload all videos (if any)
-      if (videos.length > 0 && courseId) {
-        for (const file of videos) {
-          const videoData = new FormData();
-          videoData.append("title", file.name);
-          videoData.append("description", "");
-          videoData.append("course", courseId);
-          videoData.append("video_file", file);
-          await API.post("courses/videos/", videoData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-        }
-      }
-
-      onToast?.({
-        type: "success",
-        text: edit ? "Course updated successfully!" : "Course created successfully!",
-      });
-      navigate("/courses");
+      const { data } = await API.get("courses/");
+      setCourses(data);
     } catch (err) {
-      console.error("Error saving course:", err);
-      onToast?.({ type: "error", text: "Failed to save course. Check permissions or data." });
+      console.error("⚠️ Failed to load courses:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  // ❌ Delete course (admin only)
+  const deleteCourse = async (id) => {
+    if (!window.confirm("Delete this course?")) return;
+    try {
+      await API.delete(`courses/${id}/`);
+      setCourses((prev) => prev.filter((c) => c.id !== id));
+    } catch {
+      alert("Only admins can delete courses!");
+    }
+  };
+
+  // 🎓 Enroll course (student only)
+  const enrollCourse = async (id) => {
+    try {
+      await API.post(`courses/${id}/enroll/`);
+      alert("✅ Enrolled successfully!");
+      fetchCourses();
+    } catch {
+      alert("❌ Enrollment failed or already enrolled.");
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  if (loading)
+    return (
+      <div className="card course-card">
+        <p>Loading courses...</p>
+      </div>
+    );
+
   return (
-    <div className="card course-form">
-      <h1 className="h1">{edit ? "Edit Course" : "Create New Course"}</h1>
-      <form onSubmit={handleSubmit}>
-        {/* 🏷️ Course Info */}
-        <input
-          className="input"
-          name="title"
-          placeholder="Course Title"
-          value={form.title}
-          onChange={handleChange}
-          required
-        />
-        <textarea
-          className="input"
-          name="description"
-          placeholder="Course Description"
-          value={form.description}
-          onChange={handleChange}
-        />
-        <select
-          className="input"
-          name="category"
-          value={form.category}
-          onChange={handleChange}
-        >
-          <option value="programming">Programming</option>
-          <option value="design">Design</option>
-          <option value="business">Business</option>
-          <option value="other">Other</option>
-        </select>
+    <div className="card course-card">
+      <div className="course-header">
+        <h1 className="h1">
+          {user.role === "admin" ? "My Courses" : "Available Courses"}
+        </h1>
 
-        {/* 🎥 Video Uploads */}
-        <label className="muted" style={{ marginTop: "10px", display: "block" }}>
-          Upload Course Videos (you can select multiple):
-        </label>
-        <input
-          className="input"
-          type="file"
-          name="videos"
-          accept="video/*"
-          multiple
-          onChange={handleVideoChange}
-        />
-
-        {/* 📋 Show selected files */}
-        {videos.length > 0 && (
-          <ul className="video-preview-list">
-            {videos.map((v, i) => (
-              <li key={i} className="video-preview-item">
-                🎞️ {v.name}
-              </li>
-            ))}
-          </ul>
+        {user.role === "admin" && (
+          <Link className="btn primary add-btn" to="/courses/new">
+            + Add Course
+          </Link>
         )}
+      </div>
 
-        <button className="btn primary" type="submit" disabled={loading}>
-          {loading
-            ? edit
-              ? "Updating..."
-              : "Creating..."
-            : edit
-            ? "Update Course"
-            : "Create Course"}
-        </button>
-      </form>
+      {/* 🧩 Course Grid */}
+      <div className="course-grid">
+        {courses.length > 0 ? (
+          courses.map((course) => (
+            <div key={course.id} className="tile video-tile">
+              <h3>{course.title}</h3>
+              <p>{course.description}</p>
+              <p className="muted">Category: {course.category}</p>
+              <p>
+                Instructor: <b>{course.instructor_name}</b>
+              </p>
+
+              {/* 🎬 Show videos only if student is enrolled */}
+              {course.videos?.length > 0 && (
+                <div className="video-preview">
+                  <h4>🎞 Preview Videos</h4>
+                  {user.role === "student" ? (
+                    <p className="muted small-text">
+                      Enroll to unlock video access.
+                    </p>
+                  ) : (
+                    <Link
+                      to={`/courses/${course.id}/videos`}
+                      className="btn small primary"
+                    >
+                      Manage Videos
+                    </Link>
+                  )}
+                </div>
+              )}
+
+              {/* 🧰 Admin actions */}
+              {user.role === "admin" && (
+                <div className="tile-actions">
+                  <Link className="btn small" to={`/courses/edit/${course.id}`}>
+                    Edit
+                  </Link>
+                  <button
+                    className="btn danger small"
+                    onClick={() => deleteCourse(course.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+
+              {/* 🎓 Student enroll button */}
+              {user.role === "student" && (
+                <button
+                  className="btn primary enroll-btn"
+                  onClick={() => enrollCourse(course.id)}
+                >
+                  Enroll
+                </button>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="empty-state">No courses available yet.</div>
+        )}
+      </div>
     </div>
   );
 }
