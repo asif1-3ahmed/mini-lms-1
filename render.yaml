@@ -1,4 +1,5 @@
 services:
+  # BACKEND (Django)
   - type: web
     name: django-backend
     env: python
@@ -27,8 +28,11 @@ services:
       - key: FRONTEND_URL
         value: ""
 
-  - type: static
+  # FRONTEND (React)
+  - type: web
     name: react-frontend
+    env: static
+    region: oregon
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: build
