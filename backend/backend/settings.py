@@ -103,6 +103,12 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # -----------------------------
+# 📹 Media Files (Video Uploads)
+# -----------------------------
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# -----------------------------
 # 🌐 CORS / CSRF Settings
 # -----------------------------
 # Allow all origins if wildcard, otherwise restrict

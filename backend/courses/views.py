@@ -3,25 +3,25 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
-from .models import Course
-from .serializers import CourseSerializer
+from .models import Course, Video
+from .serializers import CourseSerializer, VideoSerializer
+import traceback
 
 
+# 🔒 Custom permission: only admins can modify, others read-only
 class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
-        # Allow safe methods for everyone
         if request.method in permissions.SAFE_METHODS:
             return True
-
-        # Only authenticated admins can modify
         user = request.user
-        return bool(
+        return (
             user
             and user.is_authenticated
             and getattr(user, "role", None) == "admin"
         )
 
 
+# 🎓 Courses CRUD + Enroll
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     authentication_classes = [TokenAuthentication]
@@ -43,11 +43,8 @@ class CourseViewSet(viewsets.ModelViewSet):
                 raise PermissionDenied("Authentication required to create courses.")
             if getattr(user, "role", None) != "admin":
                 raise PermissionDenied("Only admins can add courses!")
-
             serializer.save(instructor=user)
-
         except Exception as e:
-            # ✅ Print error in Render logs for debugging
             print("🔥 Course creation failed:", e)
             traceback.print_exc()
             raise e
@@ -57,6 +54,30 @@ class CourseViewSet(viewsets.ModelViewSet):
         course = self.get_object()
         user = request.user
         if getattr(user, "role", None) != "student":
-            return Response({"error": "Only students can enroll."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Only students can enroll."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         course.students.add(user)
         return Response({"message": "Enrolled successfully!"}, status=status.HTTP_200_OK)
+
+
+# 🎥 Video Upload + List
+class VideoViewSet(viewsets.ModelViewSet):
+    queryset = Video.objects.all().order_by("-created_at")
+    serializer_class = VideoSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        course = serializer.validated_data.get("course")
+
+        if not user.is_authenticated:
+            raise PermissionDenied("Authentication required.")
+        if getattr(user, "role", None) != "admin":
+            raise PermissionDenied("Only admins can upload videos.")
+        if course.instructor != user:
+            raise PermissionDenied("You can only upload videos for your own courses.")
+
+        serializer.save()
