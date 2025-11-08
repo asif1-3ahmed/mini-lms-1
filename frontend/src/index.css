@@ -92,3 +92,192 @@ body{
   border:1px solid rgba(255,255,255,.08);
 }
 .muted{color:var(--muted)}
+/* 🌌 Base Styles */
+body {
+  font-family: "Inter", sans-serif;
+  background: #0b0f19;
+  color: #f5f5f5;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 60px auto;
+  padding: 0 20px;
+}
+
+/* 🌟 Reusable UI Blocks */
+.card {
+  background: #131a2a;
+  border: 1px solid #1e2a44;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  margin-bottom: 25px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 25px rgba(0,0,0,0.6);
+}
+
+.h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #00d4ff;
+  margin-bottom: 10px;
+}
+
+.sub {
+  font-size: 0.95rem;
+  color: #9ca3af;
+  margin-bottom: 20px;
+}
+
+/* 🧱 Inputs and Buttons */
+.input {
+  width: 100%;
+  padding: 12px;
+  background: #0f1623;
+  border: 1px solid #2a3553;
+  color: #fff;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus {
+  border-color: #00bfff;
+  box-shadow: 0 0 8px #00bfff33;
+  outline: none;
+}
+
+.select {
+  cursor: pointer;
+}
+
+.btn {
+  background: #1d253a;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  background: #26304b;
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #0077ff, #00d4ff);
+  color: #fff;
+  border: none;
+}
+
+.btn.primary:hover {
+  filter: brightness(1.1);
+}
+
+.btn.danger {
+  background: #ff0044;
+  border: none;
+}
+
+.btn.danger:hover {
+  background: #ff2266;
+}
+
+.btn.small {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+/* 🪄 Course List & Tiles */
+.tile {
+  background: #0f1623;
+  border: 1px solid #1f2a44;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.tile:hover {
+  transform: scale(1.02);
+  border-color: #00bfff;
+  box-shadow: 0 0 12px #00bfff33;
+}
+
+.tile h3 {
+  color: #00d4ff;
+  margin-bottom: 10px;
+}
+
+.tile p {
+  margin: 6px 0;
+}
+
+.muted {
+  color: #a1a9b9;
+  font-size: 0.9rem;
+}
+
+/* 🧭 Navbar (from earlier) */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #0b0f19;
+  color: #fff;
+  border-bottom: 1px solid #1f2a44;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.brand .logo {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #00d4ff, #0077ff);
+  border-radius: 6px;
+}
+
+.brand .title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 💡 Empty State / No Courses */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 1.1rem;
+  color: #9ca3af;
+  opacity: 0.9;
+}
+
+/* 🧠 Smooth transitions */
+button, .input, .tile, .card {
+  transition: all 0.25s ease-in-out;
+}

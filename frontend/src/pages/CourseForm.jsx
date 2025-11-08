@@ -30,12 +30,12 @@ export default function CourseForm({ edit=false }) {
 
   return (
     <div className="card">
-      <h1>{edit ? "Edit Course" : "Add Course"}</h1>
+      <h1 className="h1">{edit ? "Edit Course" : "Add Course"}</h1>
       <form onSubmit={submit}>
         <input className="input" name="title" placeholder="Title" value={form.title}
                onChange={(e)=>setForm({...form, title:e.target.value})} required />
         <textarea className="input" name="description" placeholder="Description"
-                  value={form.description} onChange={(e)=>setForm({...form, description:e.target.value})} />
+                  value={form.description} onChange={(e)=>setForm({...form, description:e.target.value})}/>
         <select className="input" name="category" value={form.category}
                 onChange={(e)=>setForm({...form, category:e.target.value})}>
           <option value="programming">Programming</option>
@@ -44,7 +44,7 @@ export default function CourseForm({ edit=false }) {
           <option value="other">Other</option>
         </select>
         <button className="btn primary" type="submit" disabled={loading}>
-          {loading ? "Saving..." : (edit ? "Update" : "Add Course")}
+          {loading ? "Saving..." : edit ? "Update Course" : "Add Course"}
         </button>
       </form>
     </div>

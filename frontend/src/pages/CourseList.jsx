@@ -15,15 +15,6 @@ export default function CourseList() {
     }
   };
 
-  const enrollCourse = async (id) => {
-    try {
-      await API.post(`courses/${id}/enroll/`);
-      alert("Enrolled successfully!");
-    } catch {
-      alert("Failed to enroll!");
-    }
-  };
-
   const deleteCourse = async (id) => {
     if (!window.confirm("Delete this course?")) return;
     try {
@@ -39,24 +30,35 @@ export default function CourseList() {
   return (
     <div className="card">
       <h1 className="h1">{user.role === "admin" ? "My Courses" : "Available Courses"}</h1>
+
+      {/* ✅ Admin-only Add Course Button */}
       {user.role === "admin" && (
-        <Link className="btn primary" to="/courses/new">+ Add New Course</Link>
+        <Link
+          className="btn primary"
+          to="/courses/new"
+          style={{ marginBottom: "20px", display: "inline-block" }}
+        >
+          + Add New Course
+        </Link>
       )}
-      <div style={{marginTop:"20px"}}>
+
+      <div>
         {courses.map((c) => (
           <div key={c.id} className="tile">
             <h3>{c.title}</h3>
             <p>{c.description}</p>
             <p className="muted">Category: {c.category}</p>
             <p>Instructor: <b>{c.instructor_name}</b></p>
+
             {user.role === "admin" && (
-              <div style={{marginTop:"10px"}}>
+              <div style={{ marginTop: "10px" }}>
                 <Link className="btn small" to={`/courses/edit/${c.id}`}>Edit</Link>
-                <button className="btn danger small" onClick={()=>deleteCourse(c.id)}>Delete</button>
+                <button className="btn danger small" onClick={() => deleteCourse(c.id)}>Delete</button>
               </div>
             )}
+
             {user.role === "student" && (
-              <button className="btn primary small" onClick={()=>enrollCourse(c.id)}>Enroll</button>
+              <button className="btn primary small">Enroll</button>
             )}
           </div>
         ))}
