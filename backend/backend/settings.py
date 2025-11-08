@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 import dj_database_url
-from django.contrib.auth import get_user_model  # ✅ <-- This import is required
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -121,17 +120,3 @@ CSRF_TRUSTED_ORIGINS = [
 if frontend_url:
     CSRF_TRUSTED_ORIGINS = list(set(CSRF_TRUSTED_ORIGINS + [frontend_url]))
 
-if os.environ.get("CREATE_SUPERUSER", "False") == "True":
-    try:
-        User = get_user_model()
-        username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "admin")
-        email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "admin@example.com")
-        password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "admin123")
-
-        if not User.objects.filter(username=username).exists():
-            User.objects.create_superuser(username=username, email=email, password=password)
-            print(f"✅ Superuser '{username}' created automatically.")
-        else:
-            print(f"ℹ️ Superuser '{username}' already exists.")
-    except Exception as e:
-        print(f"⚠️ Could not auto-create superuser: {e}")
