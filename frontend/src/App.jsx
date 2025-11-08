@@ -6,9 +6,13 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
+import CourseList from "./pages/CourseList";
+import CourseForm from "./pages/CourseForm";
+import MyCourses from "./pages/MyCourses";
+
 import API from "./api";
 
-export default function App(){
+export default function App() {
   const [toast, setToast] = useState(null);
   const navigate = useNavigate();
 
@@ -17,13 +21,13 @@ export default function App(){
     const token = localStorage.getItem("token");
     if (!token) return;
     API.get("me/")
-      .then(({data})=>{
+      .then(({ data }) => {
         localStorage.setItem("user", JSON.stringify(data.user));
       })
-      .catch(()=>{
+      .catch(() => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        setToast({type:"error", text:"Session expired. Please login again."});
+        setToast({ type: "error", text: "Session expired. Please login again." });
         navigate("/");
       });
   }, [navigate]);
@@ -38,6 +42,10 @@ export default function App(){
           <Route element={<PrivateRoute />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/student" element={<StudentDashboard />} />
+            <Route path="/courses" element={<CourseList />} />
+            <Route path="/courses/new" element={<CourseForm />} />
+            <Route path="/courses/edit/:id" element={<CourseForm edit />} />
+            <Route path="/mycourses" element={<MyCourses />} />
           </Route>
         </Routes>
       </div>
