@@ -116,14 +116,13 @@ export default function CourseForm({ edit = false, onToast }) {
     <div className="card course-form">
       {/* 🌈 Global Loading Bar */}
       {loading && (
-        <div className="global-progress-bar">
+        <div className="global-progress-top">
           <div
             className="global-progress-fill"
             style={{ width: `${overallProgress}%` }}
           ></div>
         </div>
       )}
-
       <h1 className="h1">{edit ? "Edit Course" : "Create New Course"}</h1>
       <form onSubmit={handleSubmit}>
         <input
@@ -191,8 +190,8 @@ export default function CourseForm({ edit = false, onToast }) {
               ? "Updating..."
               : "Creating..."
             : edit
-            ? "Update Course"
-            : "Create Course"}
+              ? "Update Course"
+              : "Create Course"}
         </button>
       </form>
     </div>
