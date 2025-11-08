@@ -20,7 +20,7 @@ export default function App() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    API.get("me/")
+    API.get("accounts/me/")
       .then(({ data }) => {
         localStorage.setItem("user", JSON.stringify(data.user));
       })
