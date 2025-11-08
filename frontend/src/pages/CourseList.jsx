@@ -29,18 +29,11 @@ export default function CourseList() {
 
   return (
     <div className="card">
-      <h1 className="h1">{user.role === "admin" ? "My Courses" : "Available Courses"}</h1>
+      <h1 className="h1">
+        {user.role === "admin" ? "My Courses" : "Available Courses"}
+      </h1>
 
-      {/* ✅ Admin-only Add Course Button */}
-      {user.role === "admin" && (
-        <Link
-          className="btn primary"
-          to="/courses/new"
-          style={{ marginBottom: "20px", display: "inline-block" }}
-        >
-          + Add New Course
-        </Link>
-      )}
+      {/* 🚫 Removed duplicate Add Course button */}
 
       <div>
         {courses.map((c) => (
@@ -48,12 +41,21 @@ export default function CourseList() {
             <h3>{c.title}</h3>
             <p>{c.description}</p>
             <p className="muted">Category: {c.category}</p>
-            <p>Instructor: <b>{c.instructor_name}</b></p>
+            <p>
+              Instructor: <b>{c.instructor_name}</b>
+            </p>
 
             {user.role === "admin" && (
               <div style={{ marginTop: "10px" }}>
-                <Link className="btn small" to={`/courses/edit/${c.id}`}>Edit</Link>
-                <button className="btn danger small" onClick={() => deleteCourse(c.id)}>Delete</button>
+                <Link className="btn small" to={`/courses/edit/${c.id}`}>
+                  Edit
+                </Link>
+                <button
+                  className="btn danger small"
+                  onClick={() => deleteCourse(c.id)}
+                >
+                  Delete
+                </button>
               </div>
             )}
 
