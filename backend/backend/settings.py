@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import dj_database_url
+from django.contrib.auth import get_user_model  # ✅ <-- This import is required
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -122,9 +123,9 @@ if frontend_url:
 
 if os.environ.get("CREATE_SUPERUSER", "False") == "True":
     User = get_user_model()
-    username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "admin")
+    username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "Asif")
     email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "admin@example.com")
-    password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "admin123")
+    password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "Qwer1234@123")
 
     if not User.objects.filter(username=username).exists():
         User.objects.create_superuser(username=username, email=email, password=password)
