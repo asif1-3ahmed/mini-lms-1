@@ -4,13 +4,16 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# -----------------------------
+# 🔐 Security & Environment
+# -----------------------------
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret")
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "*").split(",") if h.strip()]
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
-
+# -----------------------------
+# 🔌 Installed Apps
+# -----------------------------
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -18,13 +21,18 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
+
     "accounts",
     "courses",
 ]
 
+# -----------------------------
+# 🧱 Middleware
+# -----------------------------
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -37,18 +45,20 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# Templates (required for Django admin and DRF browsable API)
+# -----------------------------
+# 🎨 Templates (needed for admin)
+# -----------------------------
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -57,16 +67,25 @@ TEMPLATES = [
 ROOT_URLCONF = "backend.urls"
 WSGI_APPLICATION = "backend.wsgi.application"
 
+# -----------------------------
+# 🗃️ Database
+# -----------------------------
 DATABASES = {
     "default": dj_database_url.config(
-        default="sqlite:///" + str(BASE_DIR / "db.sqlite3"),
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
         ssl_require=False,
     )
 }
 
+# -----------------------------
+# 👤 Auth
+# -----------------------------
 AUTH_USER_MODEL = "accounts.User"
 
+# -----------------------------
+# 🧠 REST Framework
+# -----------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
@@ -76,13 +95,28 @@ REST_FRAMEWORK = {
     ],
 }
 
+# -----------------------------
+# 📦 Static Files
+# -----------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "*") == "*"
-if not CORS_ALLOW_ALL_ORIGINS:
-    CORS_ALLOWED_ORIGINS = [o.strip() for o in os.environ["CORS_ALLOWED_ORIGINS"].split(",") if o.strip()]
+# -----------------------------
+# 🌐 CORS / CSRF Settings
+# -----------------------------
+# Allow all origins if wildcard, otherwise restrict
+cors_env = os.environ.get("CORS_ALLOWED_ORIGINS", "*").strip()
+if cors_env == "*" or not cors_env:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_env.split(",") if o.strip()]
 
-if FRONTEND_URL:
-    CSRF_TRUSTED_ORIGINS = list(set(CSRF_TRUSTED_ORIGINS + [FRONTEND_URL]))
+# Allow frontend for CSRF trust
+frontend_url = os.environ.get("FRONTEND_URL", "").strip()
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
+]
+if frontend_url:
+    CSRF_TRUSTED_ORIGINS = list(set(CSRF_TRUSTED_ORIGINS + [frontend_url]))
+
