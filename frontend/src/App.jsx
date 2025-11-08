@@ -9,7 +9,8 @@ import StudentDashboard from "./pages/StudentDashboard";
 import CourseList from "./pages/CourseList";
 import CourseForm from "./pages/CourseForm";
 import MyCourses from "./pages/MyCourses";
-
+import CourseVideos from "./pages/CourseVideos";
+import VideoForm from "./pages/VideoForm";
 import API from "./api";
 
 export default function App() {
@@ -40,7 +41,7 @@ export default function App() {
           <Route path="/" element={<Login onToast={setToast} />} />
           <Route path="/register" element={<Register onToast={setToast} />} />
           <Route element={<PrivateRoute />}>
-            <Route path="/courses/:courseId/videos" element={<CourseVideos />} />
+            <Route path="/courses/:id/videos" element={<CourseVideos />} />
             <Route path="/courses/:courseId/upload" element={<VideoForm />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/student" element={<StudentDashboard />} />
