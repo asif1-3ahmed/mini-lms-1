@@ -32,7 +32,6 @@ services:
   - type: web
     name: react-frontend
     env: static
-    region: oregon
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: build
