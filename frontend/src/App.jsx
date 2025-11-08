@@ -1,0 +1,52 @@
+import React, { useEffect, useState } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import PrivateRoute from "./components/PrivateRoute";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import AdminDashboard from "./pages/AdminDashboard";
+import StudentDashboard from "./pages/StudentDashboard";
+import API from "./api";
+
+export default function App(){
+  const [toast, setToast] = useState(null);
+  const navigate = useNavigate();
+
+  // Verify token on load
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    API.get("me/")
+      .then(({data})=>{
+        localStorage.setItem("user", JSON.stringify(data.user));
+      })
+      .catch(()=>{
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setToast({type:"error", text:"Session expired. Please login again."});
+        navigate("/");
+      });
+  }, [navigate]);
+
+  return (
+    <div className="app-shell">
+      <Navbar onToast={setToast} />
+      <div className="container">
+        <Routes>
+          <Route path="/" element={<Login onToast={setToast} />} />
+          <Route path="/register" element={<Register onToast={setToast} />} />
+          <Route element={<PrivateRoute />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/student" element={<StudentDashboard />} />
+          </Route>
+        </Routes>
+      </div>
+
+      {toast && (
+        <div className={`toast ${toast.type}`}>
+          {toast.text}
+        </div>
+      )}
+    </div>
+  );
+}
