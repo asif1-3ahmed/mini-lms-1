@@ -11,6 +11,7 @@ export default function CourseForm({ edit = false, onToast }) {
   });
   const [videos, setVideos] = useState([]);
   const [progress, setProgress] = useState({}); // {filename: percent}
+  const [overallProgress, setOverallProgress] = useState(0); // new global progress
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
@@ -37,7 +38,8 @@ export default function CourseForm({ edit = false, onToast }) {
     );
   }
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleVideoChange = (e) => setVideos(Array.from(e.target.files));
 
@@ -56,6 +58,9 @@ export default function CourseForm({ edit = false, onToast }) {
 
       // 🎬 Upload each video with progress tracking
       if (videos.length > 0 && courseId) {
+        let totalUploaded = 0;
+        let totalSize = videos.reduce((sum, f) => sum + f.size, 0);
+
         for (const file of videos) {
           const videoData = new FormData();
           videoData.append("title", file.name);
@@ -66,16 +71,35 @@ export default function CourseForm({ edit = false, onToast }) {
           await API.post("courses/videos/", videoData, {
             headers: { "Content-Type": "multipart/form-data" },
             onUploadProgress: (event) => {
-              const percent = Math.round((event.loaded * 100) / event.total);
-              setProgress((prev) => ({ ...prev, [file.name]: percent }));
+              const filePercent = Math.round(
+                (event.loaded * 100) / event.total
+              );
+
+              setProgress((prev) => ({
+                ...prev,
+                [file.name]: filePercent,
+              }));
+
+              // Global progress
+              const uploadedBytes =
+                totalUploaded + (event.loaded / event.total) * file.size;
+              const overall = Math.min(
+                Math.round((uploadedBytes / totalSize) * 100),
+                100
+              );
+              setOverallProgress(overall);
             },
           });
+
+          totalUploaded += file.size; // update completed bytes
         }
       }
 
       onToast?.({
         type: "success",
-        text: edit ? "Course updated successfully!" : "Course created successfully!",
+        text: edit
+          ? "Course updated successfully!"
+          : "Course created successfully!",
       });
       navigate("/courses");
     } catch (err) {
@@ -83,11 +107,23 @@ export default function CourseForm({ edit = false, onToast }) {
       onToast?.({ type: "error", text: "Failed to save course." });
     } finally {
       setLoading(false);
+      setOverallProgress(100);
+      setTimeout(() => setOverallProgress(0), 1500); // fade out after done
     }
   };
 
   return (
     <div className="card course-form">
+      {/* 🌈 Global Loading Bar */}
+      {loading && (
+        <div className="global-progress-bar">
+          <div
+            className="global-progress-fill"
+            style={{ width: `${overallProgress}%` }}
+          ></div>
+        </div>
+      )}
+
       <h1 className="h1">{edit ? "Edit Course" : "Create New Course"}</h1>
       <form onSubmit={handleSubmit}>
         <input
@@ -155,8 +191,8 @@ export default function CourseForm({ edit = false, onToast }) {
               ? "Updating..."
               : "Creating..."
             : edit
-              ? "Update Course"
-              : "Create Course"}
+            ? "Update Course"
+            : "Create Course"}
         </button>
       </form>
     </div>
