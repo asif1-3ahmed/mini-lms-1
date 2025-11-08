@@ -38,48 +38,25 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
+        try:
+            if not user.is_authenticated:
+                raise PermissionDenied("Authentication required to create courses.")
+            if getattr(user, "role", None) != "admin":
+                raise PermissionDenied("Only admins can add courses!")
 
-        # ✅ Extra safety: block AnonymousUser & non-admins cleanly
-        if not user.is_authenticated:
-            raise PermissionDenied("Authentication required to create courses.")
-        if getattr(user, "role", None) != "admin":
-            raise PermissionDenied("Only admins can add courses!")
+            serializer.save(instructor=user)
 
-        # ✅ Safe save
-        serializer.save(instructor=user)
+        except Exception as e:
+            # ✅ Print error in Render logs for debugging
+            print("🔥 Course creation failed:", e)
+            traceback.print_exc()
+            raise e
 
-    # ✅ Enroll
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def enroll(self, request, pk=None):
-        user = request.user
         course = self.get_object()
-
+        user = request.user
         if getattr(user, "role", None) != "student":
             return Response({"error": "Only students can enroll."}, status=status.HTTP_403_FORBIDDEN)
-
         course.students.add(user)
         return Response({"message": "Enrolled successfully!"}, status=status.HTTP_200_OK)
-
-    # ✅ Unenroll
-    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
-    def unenroll(self, request, pk=None):
-        user = request.user
-        course = self.get_object()
-
-        if getattr(user, "role", None) != "student":
-            return Response({"error": "Only students can unenroll."}, status=status.HTTP_403_FORBIDDEN)
-
-        course.students.remove(user)
-        return Response({"message": "Unenrolled successfully!"}, status=status.HTTP_200_OK)
-
-    # ✅ My Courses
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
-    def mycourses(self, request):
-        user = request.user
-
-        if getattr(user, "role", None) != "student":
-            return Response({"error": "Only students can view enrolled courses."}, status=status.HTTP_403_FORBIDDEN)
-
-        enrolled = user.enrolled_courses.all()
-        serializer = self.get_serializer(enrolled, many=True)
-        return Response(serializer.data)
