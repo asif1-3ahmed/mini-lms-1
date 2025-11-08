@@ -319,3 +319,53 @@ button,
     transform: translateY(0);
   }
 }
+/* =========================
+   👥 Login & Register Layout Fix
+========================= */
+
+/* Horizontal layout for button + link */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* 🌈 Link Styling (Create Account / Already Have One) */
+.link {
+  color: var(--primary-2);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+/* Optional: Make the form centered and pretty on large screens */
+.card form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Center on small screens */
+@media (max-width: 500px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .row .btn,
+  .row .link {
+    width: 100%;
+    text-align: center;
+  }
+}
+.sub {
+  color: var(--muted);
+  margin-bottom: 22px;
+  font-size: 0.95rem;
+  text-align: center;
+}
