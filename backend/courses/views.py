@@ -75,8 +75,10 @@ class VideoViewSet(viewsets.ModelViewSet):
 
         if not user.is_authenticated:
             raise PermissionDenied("Authentication required.")
-        if getattr(user, "role", None) != "admin":
-            raise PermissionDenied("Only admins can upload videos.")
+
+        if getattr(user, "role", None) not in ["admin", "instructor"]:
+            raise PermissionDenied("Only admins or instructors can upload videos.")
+
         if course.instructor != user:
             raise PermissionDenied("You can only upload videos for your own courses.")
 

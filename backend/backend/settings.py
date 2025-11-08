@@ -105,6 +105,12 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # -----------------------------
+# 📁 Media (required even if using Cloudinary)
+# -----------------------------
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# -----------------------------
 # 🌩️ Cloudinary Media Storage
 # -----------------------------
 CLOUDINARY_STORAGE = {
