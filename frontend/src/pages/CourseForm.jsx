@@ -22,12 +22,14 @@ export default function CourseForm({ edit = false, onToast }) {
     }
   }, [edit, id]);
 
-  // 🔒 Restrict access
+  // 🔒 Restrict access — only admin/instructor
   if (!user || (user.role !== "admin" && user.role !== "instructor")) {
     return (
       <div className="card" style={{ textAlign: "center" }}>
         <h1 className="h1">🚫 Access Denied</h1>
-        <p className="sub">Only admins/instructors can create or edit courses.</p>
+        <p className="sub">
+          Only <b>admins</b> and <b>instructors</b> can create or edit courses.
+        </p>
         <button className="btn primary" onClick={() => navigate("/courses")}>
           Back to Courses
         </button>
@@ -35,7 +37,9 @@ export default function CourseForm({ edit = false, onToast }) {
     );
   }
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
   const handleVideoChange = (e) => setVideos(Array.from(e.target.files));
 
   const handleSubmit = async (e) => {
@@ -44,14 +48,15 @@ export default function CourseForm({ edit = false, onToast }) {
     try {
       let courseId = id;
 
-      // 🧩 Create or update course first
-      if (edit) await API.put(`courses/${id}/`, form);
-      else {
+      // 🧩 Create or update the course first
+      if (edit) {
+        await API.put(`courses/${id}/`, form);
+      } else {
         const { data } = await API.post("courses/", form);
         courseId = data.id;
       }
 
-      // 🎞️ Upload each video individually
+      // 🎬 Upload videos (if any) with progress tracking
       if (videos.length > 0 && courseId) {
         for (const file of videos) {
           const videoData = new FormData();
@@ -72,7 +77,9 @@ export default function CourseForm({ edit = false, onToast }) {
 
       onToast?.({
         type: "success",
-        text: edit ? "Course updated successfully!" : "Course created successfully!",
+        text: edit
+          ? "Course updated successfully!"
+          : "Course created successfully!",
       });
       navigate("/courses");
     } catch (err) {
@@ -86,6 +93,7 @@ export default function CourseForm({ edit = false, onToast }) {
   return (
     <div className="card course-form">
       <h1 className="h1">{edit ? "Edit Course" : "Create New Course"}</h1>
+
       <form onSubmit={handleSubmit}>
         <input
           className="input"
@@ -95,6 +103,7 @@ export default function CourseForm({ edit = false, onToast }) {
           onChange={handleChange}
           required
         />
+
         <textarea
           className="input"
           name="description"
@@ -103,9 +112,10 @@ export default function CourseForm({ edit = false, onToast }) {
           onChange={handleChange}
         />
 
+        {/* Category Selector */}
         <div className="select-wrapper">
           <select
-            className="input"
+            className="input select"
             name="category"
             value={form.category}
             onChange={handleChange}
@@ -117,6 +127,7 @@ export default function CourseForm({ edit = false, onToast }) {
           </select>
         </div>
 
+        {/* Video Upload */}
         <label className="muted" style={{ marginTop: "10px", display: "block" }}>
           Upload Course Videos (optional, multiple allowed):
         </label>
@@ -129,23 +140,21 @@ export default function CourseForm({ edit = false, onToast }) {
           onChange={handleVideoChange}
         />
 
+        {/* Preview List + Progress Bars */}
         {videos.length > 0 && (
           <ul className="video-preview-list">
             {videos.map((v) => (
               <li key={v.name} className="video-preview-item">
                 🎞️ {v.name}
-                {progress[v.name] ? (
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${progress[v.name]}%` }}
-                    ></div>
-                  </div>
-                ) : (
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: "0%" }}></div>
-                  </div>
-                )}
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${progress[v.name] || 0}%` }}
+                  ></div>
+                </div>
+                <span className="progress-percent">
+                  {progress[v.name] ? `${progress[v.name]}%` : "0%"}
+                </span>
               </li>
             ))}
           </ul>
