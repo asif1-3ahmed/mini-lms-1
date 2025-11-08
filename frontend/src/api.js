@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: (process.env.REACT_APP_API_BASE || "http://localhost:8000/api/") + "accounts/",
-  timeout: 10000
+  baseURL: (import.meta.env.VITE_API_BASE || "http://localhost:8000/api/") + "accounts/",
 });
 
 API.interceptors.request.use((config) => {
