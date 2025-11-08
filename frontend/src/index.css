@@ -1,5 +1,5 @@
 /* ===================================
- 🌌 NOVA LEARN — CLEAN + GLOSSY THEME
+ 🌌 NOVA LEARN — COMPLETE THEME CSS
 =================================== */
 
 :root {
@@ -38,6 +38,15 @@ body {
 }
 
 /* =========================
+   🌐 App Shell
+========================= */
+.app-shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================
    🧭 Navbar
 ========================= */
 .navbar {
@@ -72,6 +81,12 @@ body {
   font-weight: 700;
   letter-spacing: 0.3px;
   font-size: 1.1rem;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .muted {
@@ -120,6 +135,29 @@ body {
 }
 
 /* =========================
+   💬 Toast
+========================= */
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+.toast.success {
+  border-color: rgba(45, 212, 191, 0.4);
+}
+
+.toast.error {
+  border-color: rgba(255, 107, 107, 0.5);
+}
+
+/* =========================
    🪄 Forms / Cards
 ========================= */
 .container {
@@ -153,6 +191,7 @@ body {
 .sub {
   color: var(--muted);
   margin-bottom: 22px;
+  font-size: 0.95rem;
   text-align: center;
 }
 
@@ -182,17 +221,22 @@ input[type="file"].input {
   background: rgba(255, 255, 255, 0.04);
   color: var(--muted);
   cursor: pointer;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
+
 input[type="file"].input:hover {
   border-color: var(--primary-2);
   box-shadow: 0 0 10px var(--primary-2);
 }
 
 /* =========================
-   🧠 Course Grid + Video Tiles
+   🧩 Dashboard / Course Grid
 ========================= */
-.course-card {
-  width: min(1200px, 95vw);
+.dashboard {
+  width: min(1000px, 95vw);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
 .course-grid {
@@ -209,7 +253,6 @@ input[type="file"].input:hover {
   border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.3s ease;
   animation: fadeInUp 0.4s ease both;
-  position: relative;
 }
 
 .tile:hover {
@@ -218,15 +261,62 @@ input[type="file"].input:hover {
   box-shadow: 0 0 12px #00bfff33;
 }
 
-.video-tile h3 {
+.tile h3 {
   color: var(--primary-2);
   margin-bottom: 10px;
   font-weight: 600;
 }
 
+.course-card {
+  width: min(1200px, 95vw);
+}
+
+.tile-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.enroll-btn {
+  width: 100%;
+  margin-top: 12px;
+}
+
 /* =========================
-   🔒 Locked Video Preview
+   🎥 VIDEO UPLOAD + PLAYER
 ========================= */
+.video-preview-list {
+  list-style: none;
+  margin: 10px 0 16px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.video-preview-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  backdrop-filter: blur(6px);
+  transition: all 0.25s ease;
+}
+
+.video-preview-item:hover {
+  border-color: var(--primary-2);
+  color: var(--primary-2);
+}
+
+.react-player {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  margin-bottom: 10px;
+}
+
+/* Locked Video Overlay */
 .video-locked {
   position: relative;
   filter: blur(1px) brightness(0.6);
@@ -244,7 +334,6 @@ input[type="file"].input:hover {
   color: #fff;
   font-weight: 600;
   font-size: 1rem;
-  text-align: center;
   border-radius: 12px;
   backdrop-filter: blur(6px);
   transition: all 0.3s ease;
@@ -253,17 +342,6 @@ input[type="file"].input:hover {
 .video-locked:hover .lock-overlay {
   background: rgba(0, 0, 0, 0.7);
   font-size: 1.05rem;
-}
-
-/* =========================
-   🎬 React Player
-========================= */
-.react-player {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 0 18px rgba(0, 0, 0, 0.25);
-  margin-bottom: 10px;
-  background: #000;
 }
 
 /* =========================
@@ -299,45 +377,62 @@ button,
 }
 
 /* =========================
-   📱 Responsive Grid
+   📱 Responsive Tweaks
 ========================= */
 @media (max-width: 1200px) {
   .course-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
 @media (max-width: 800px) {
   .course-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
 @media (max-width: 500px) {
   .course-grid {
     grid-template-columns: 1fr;
   }
 }
+
 /* =========================
-   🎥 Course Form Video Upload
+   👥 Login & Register Fix
 ========================= */
-.video-preview-list {
-  list-style: none;
-  padding: 0;
-  margin: 10px 0 16px;
-  color: var(--muted);
-  font-size: 0.9rem;
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
 }
 
-.video-preview-item {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 6px 10px;
-  margin-bottom: 6px;
-  backdrop-filter: blur(6px);
-  transition: all 0.2s ease;
-}
-
-.video-preview-item:hover {
-  border-color: var(--primary-2);
+.link {
   color: var(--primary-2);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.card form {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 500px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .row .btn,
+  .row .link {
+    width: 100%;
+    text-align: center;
+  }
 }
