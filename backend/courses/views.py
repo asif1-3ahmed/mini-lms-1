@@ -60,6 +60,17 @@ class CourseViewSet(viewsets.ModelViewSet):
             )
         course.students.add(user)
         return Response({"message": "Enrolled successfully!"}, status=status.HTTP_200_OK)
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def mycourses(self, request):
+        user = request.user
+        if getattr(user, "role", None) != "student":
+            return Response(
+                {"error": "Only students can view enrolled courses."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        enrolled = Course.objects.filter(students=user).prefetch_related("videos", "instructor")
+        serializer = self.get_serializer(enrolled, many=True)
+        return Response(serializer.data)
 
 
 # 🎥 Video Upload + List
