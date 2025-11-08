@@ -11,7 +11,6 @@ export default function CourseForm({ edit = false, onToast }) {
   });
   const [videos, setVideos] = useState([]);
   const [progress, setProgress] = useState({}); // {filename: percent}
-  const [overallProgress, setOverallProgress] = useState(0); // new global progress
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
@@ -23,14 +22,12 @@ export default function CourseForm({ edit = false, onToast }) {
     }
   }, [edit, id]);
 
-  // 🧱 Restrict access — only admins/instructors
+  // 🔒 Restrict access
   if (!user || (user.role !== "admin" && user.role !== "instructor")) {
     return (
       <div className="card" style={{ textAlign: "center" }}>
         <h1 className="h1">🚫 Access Denied</h1>
-        <p className="sub">
-          Only <b>admins</b> and <b>instructors</b> can create or edit courses.
-        </p>
+        <p className="sub">Only admins/instructors can create or edit courses.</p>
         <button className="btn primary" onClick={() => navigate("/courses")}>
           Back to Courses
         </button>
@@ -38,9 +35,7 @@ export default function CourseForm({ edit = false, onToast }) {
     );
   }
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
-
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const handleVideoChange = (e) => setVideos(Array.from(e.target.files));
 
   const handleSubmit = async (e) => {
@@ -49,18 +44,15 @@ export default function CourseForm({ edit = false, onToast }) {
     try {
       let courseId = id;
 
-      if (edit) {
-        await API.put(`courses/${id}/`, form);
-      } else {
+      // 🧩 Create or update course first
+      if (edit) await API.put(`courses/${id}/`, form);
+      else {
         const { data } = await API.post("courses/", form);
         courseId = data.id;
       }
 
-      // 🎬 Upload each video with progress tracking
+      // 🎞️ Upload each video individually
       if (videos.length > 0 && courseId) {
-        let totalUploaded = 0;
-        let totalSize = videos.reduce((sum, f) => sum + f.size, 0);
-
         for (const file of videos) {
           const videoData = new FormData();
           videoData.append("title", file.name);
@@ -71,35 +63,16 @@ export default function CourseForm({ edit = false, onToast }) {
           await API.post("courses/videos/", videoData, {
             headers: { "Content-Type": "multipart/form-data" },
             onUploadProgress: (event) => {
-              const filePercent = Math.round(
-                (event.loaded * 100) / event.total
-              );
-
-              setProgress((prev) => ({
-                ...prev,
-                [file.name]: filePercent,
-              }));
-
-              // Global progress
-              const uploadedBytes =
-                totalUploaded + (event.loaded / event.total) * file.size;
-              const overall = Math.min(
-                Math.round((uploadedBytes / totalSize) * 100),
-                100
-              );
-              setOverallProgress(overall);
+              const percent = Math.round((event.loaded * 100) / event.total);
+              setProgress((prev) => ({ ...prev, [file.name]: percent }));
             },
           });
-
-          totalUploaded += file.size; // update completed bytes
         }
       }
 
       onToast?.({
         type: "success",
-        text: edit
-          ? "Course updated successfully!"
-          : "Course created successfully!",
+        text: edit ? "Course updated successfully!" : "Course created successfully!",
       });
       navigate("/courses");
     } catch (err) {
@@ -107,22 +80,11 @@ export default function CourseForm({ edit = false, onToast }) {
       onToast?.({ type: "error", text: "Failed to save course." });
     } finally {
       setLoading(false);
-      setOverallProgress(100);
-      setTimeout(() => setOverallProgress(0), 1500); // fade out after done
     }
   };
 
   return (
     <div className="card course-form">
-      {/* 🌈 Global Loading Bar */}
-      {loading && (
-        <div className="global-progress-top">
-          <div
-            className="global-progress-fill"
-            style={{ width: `${overallProgress}%` }}
-          ></div>
-        </div>
-      )}
       <h1 className="h1">{edit ? "Edit Course" : "Create New Course"}</h1>
       <form onSubmit={handleSubmit}>
         <input
@@ -140,6 +102,7 @@ export default function CourseForm({ edit = false, onToast }) {
           value={form.description}
           onChange={handleChange}
         />
+
         <div className="select-wrapper">
           <select
             className="input"
@@ -178,7 +141,11 @@ export default function CourseForm({ edit = false, onToast }) {
                       style={{ width: `${progress[v.name]}%` }}
                     ></div>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: "0%" }}></div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -190,8 +157,8 @@ export default function CourseForm({ edit = false, onToast }) {
               ? "Updating..."
               : "Creating..."
             : edit
-              ? "Update Course"
-              : "Create Course"}
+            ? "Update Course"
+            : "Create Course"}
         </button>
       </form>
     </div>
