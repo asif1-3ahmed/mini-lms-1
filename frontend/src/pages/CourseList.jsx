@@ -32,7 +32,7 @@ export default function CourseList() {
   }, []);
 
   return (
-    <div className="card">
+    <div className="card course-card">
       <div className="course-header">
         <h1 className="h1">
           {user.role === "admin" ? "My Courses" : "Available Courses"}
