@@ -1,5 +1,8 @@
 from django.db import models
 from django.conf import settings
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+from cloudinary.uploader import destroy
 
 class Course(models.Model):
     CATEGORY_CHOICES = [
@@ -37,3 +40,18 @@ class Video(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.course.title})"
+        
+@receiver(post_delete, sender=Video)
+def delete_video_from_cloudinary(sender, instance, **kwargs):
+    """
+    Automatically delete video file from Cloudinary
+    when the Video model is deleted.
+    """
+    if instance.video_file:
+        try:
+            # Extract public_id from the Cloudinary URL
+            public_id = instance.video_file.name.split("/")[-1].split(".")[0]
+            destroy(public_id, resource_type="video")
+            print(f"🗑️ Deleted video from Cloudinary: {public_id}")
+        except Exception as e:
+            print(f"⚠️ Cloudinary delete failed: {e}")
