@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import ReactPlayer from "react-player";
 import API from "../api";
 
 export default function CourseList() {
@@ -20,7 +19,7 @@ export default function CourseList() {
     }
   };
 
-  // ❌ Delete a course (admin only)
+  // ❌ Delete course (admin only)
   const deleteCourse = async (id) => {
     if (!window.confirm("Delete this course?")) return;
     try {
@@ -31,7 +30,7 @@ export default function CourseList() {
     }
   };
 
-  // 🎓 Enroll course (student only)
+  // 🎓 Enroll (student only)
   const enrollCourse = async (id) => {
     try {
       await API.post(`courses/${id}/enroll/`);
@@ -60,6 +59,7 @@ export default function CourseList() {
           {user.role === "admin" ? "My Courses" : "Available Courses"}
         </h1>
 
+        {/* 🧩 Admin — Add Course Button */}
         {user.role === "admin" && (
           <Link className="btn primary add-btn" to="/courses/new">
             + Add Course
@@ -67,31 +67,45 @@ export default function CourseList() {
         )}
       </div>
 
+      {/* 🧠 Courses Grid */}
       <div className="course-grid">
         {courses.length > 0 ? (
           courses.map((course) => {
             const hasVideo = course.videos && course.videos.length > 0;
-            const previewVideo = hasVideo ? course.videos[0].video_file : null;
+            let thumbnail = null;
+
+            // ⚡ Cloudinary thumbnail generation (1st frame)
+            if (hasVideo && course.videos[0].video_file.includes("cloudinary")) {
+              thumbnail = course.videos[0].video_file
+                .replace("/upload/", "/upload/so_1/")
+                .replace(".mp4", ".jpg");
+            }
 
             return (
               <div key={course.id} className="tile video-tile">
-                {/* 🎞️ Video Preview */}
-                {previewVideo ? (
+                {/* 🎞️ Video Thumbnail */}
+                {hasVideo ? (
                   <div className="video-preview-container">
-                    <ReactPlayer
-                      url={previewVideo}
-                      light={true} // only show thumbnail
-                      playIcon={<span className="play-icon">▶</span>}
-                      width="100%"
-                      height="180px"
-                      className="react-player"
-                      controls={false}
-                    />
+                    {thumbnail ? (
+                      <img
+                        src={thumbnail}
+                        alt="Course Preview"
+                        className="video-thumb"
+                      />
+                    ) : (
+                      <video
+                        src={course.videos[0].video_file}
+                        className="video-thumb"
+                        muted
+                        playsInline
+                      />
+                    )}
                   </div>
                 ) : (
-                  <div className="video-placeholder">🎬 No preview available</div>
+                  <div className="no-thumb">🎬 No Video Available</div>
                 )}
 
+                {/* 📘 Course Details */}
                 <h3>{course.title}</h3>
                 <p>{course.description}</p>
                 <p className="muted">Category: {course.category}</p>
@@ -99,7 +113,7 @@ export default function CourseList() {
                   Instructor: <b>{course.instructor_name}</b>
                 </p>
 
-                {/* 🧰 Admin actions */}
+                {/* 🧰 Admin Actions */}
                 {user.role === "admin" && (
                   <div className="tile-actions">
                     <Link className="btn small" to={`/courses/edit/${course.id}`}>
@@ -114,7 +128,7 @@ export default function CourseList() {
                   </div>
                 )}
 
-                {/* 🎓 Student actions */}
+                {/* 🎓 Student Actions */}
                 {user.role === "student" && (
                   <div className="tile-actions">
                     <button
