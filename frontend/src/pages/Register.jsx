@@ -34,10 +34,12 @@ export default function Register({ onToast }) {
                 <input className="input" name="username" placeholder="Username" value={form.username} onChange={change} required />
                 <input className="input" type="email" name="email" placeholder="Email" value={form.email} onChange={change} required />
                 <input className="input" type="password" name="password" placeholder="Password" value={form.password} onChange={change} required />
-                <select className="input select" name="role" value={form.role} onChange={change}>
-                    <option value="student">Student</option>
-                    <option value="admin">Admin</option>
-                </select>
+                <div className="select-wrapper">
+                    <select className="input select" name="role" value={form.role} onChange={change}>
+                        <option value="student">Student</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
                 <div className="row">
                     <button className="btn primary" type="submit" disabled={loading}>
                         {loading ? "Creating..." : "Create account"}

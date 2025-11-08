@@ -3,12 +3,14 @@ import API from "../api";
 import { useNavigate, useParams } from "react-router-dom";
 
 export default function CourseForm({ edit = false, onToast }) {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [form, setForm] = useState({
     title: "",
     description: "",
     category: "other",
   });
-  const [videos, setVideos] = useState([]); // 🎥 store multiple videos
+  const [videos, setVideos] = useState([]);
+  const [progress, setProgress] = useState({}); // {filename: percent}
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
@@ -20,34 +22,39 @@ export default function CourseForm({ edit = false, onToast }) {
     }
   }, [edit, id]);
 
-  // 📥 Handle basic form fields
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  // 🧱 Restrict access — only admins/instructors
+  if (!user || (user.role !== "admin" && user.role !== "instructor")) {
+    return (
+      <div className="card" style={{ textAlign: "center" }}>
+        <h1 className="h1">🚫 Access Denied</h1>
+        <p className="sub">
+          Only <b>admins</b> and <b>instructors</b> can create or edit courses.
+        </p>
+        <button className="btn primary" onClick={() => navigate("/courses")}>
+          Back to Courses
+        </button>
+      </div>
+    );
+  }
 
-  // 🎥 Handle video uploads
-  const handleVideoChange = (e) => {
-    setVideos(Array.from(e.target.files)); // multiple file support
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  // 🧾 Submit handler for both course + videos
+  const handleVideoChange = (e) => setVideos(Array.from(e.target.files));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       let courseId = id;
 
       if (edit) {
-        // ✏️ Update existing course
         await API.put(`courses/${id}/`, form);
       } else {
-        // ➕ Create new course
         const { data } = await API.post("courses/", form);
         courseId = data.id;
       }
 
-      // 🎬 Upload all videos (if any)
+      // 🎬 Upload each video with progress tracking
       if (videos.length > 0 && courseId) {
         for (const file of videos) {
           const videoData = new FormData();
@@ -55,8 +62,13 @@ export default function CourseForm({ edit = false, onToast }) {
           videoData.append("description", "");
           videoData.append("course", courseId);
           videoData.append("video_file", file);
+
           await API.post("courses/videos/", videoData, {
             headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: (event) => {
+              const percent = Math.round((event.loaded * 100) / event.total);
+              setProgress((prev) => ({ ...prev, [file.name]: percent }));
+            },
           });
         }
       }
@@ -68,7 +80,7 @@ export default function CourseForm({ edit = false, onToast }) {
       navigate("/courses");
     } catch (err) {
       console.error("Error saving course:", err);
-      onToast?.({ type: "error", text: "Failed to save course. Check permissions or data." });
+      onToast?.({ type: "error", text: "Failed to save course." });
     } finally {
       setLoading(false);
     }
@@ -78,7 +90,6 @@ export default function CourseForm({ edit = false, onToast }) {
     <div className="card course-form">
       <h1 className="h1">{edit ? "Edit Course" : "Create New Course"}</h1>
       <form onSubmit={handleSubmit}>
-        {/* 🏷️ Course Info */}
         <input
           className="input"
           name="title"
@@ -94,21 +105,22 @@ export default function CourseForm({ edit = false, onToast }) {
           value={form.description}
           onChange={handleChange}
         />
-        <select
-          className="input"
-          name="category"
-          value={form.category}
-          onChange={handleChange}
-        >
-          <option value="programming">Programming</option>
-          <option value="design">Design</option>
-          <option value="business">Business</option>
-          <option value="other">Other</option>
-        </select>
+        <div className="select-wrapper">
+          <select
+            className="input"
+            name="category"
+            value={form.category}
+            onChange={handleChange}
+          >
+            <option value="programming">Programming</option>
+            <option value="design">Design</option>
+            <option value="business">Business</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
 
-        {/* 🎥 Video Uploads */}
         <label className="muted" style={{ marginTop: "10px", display: "block" }}>
-          Upload Course Videos (you can select multiple):
+          Upload Course Videos (optional, multiple allowed):
         </label>
         <input
           className="input"
@@ -119,12 +131,19 @@ export default function CourseForm({ edit = false, onToast }) {
           onChange={handleVideoChange}
         />
 
-        {/* 📋 Show selected files */}
         {videos.length > 0 && (
           <ul className="video-preview-list">
-            {videos.map((v, i) => (
-              <li key={i} className="video-preview-item">
+            {videos.map((v) => (
+              <li key={v.name} className="video-preview-item">
                 🎞️ {v.name}
+                {progress[v.name] ? (
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${progress[v.name]}%` }}
+                    ></div>
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -136,8 +155,8 @@ export default function CourseForm({ edit = false, onToast }) {
               ? "Updating..."
               : "Creating..."
             : edit
-            ? "Update Course"
-            : "Create Course"}
+              ? "Update Course"
+              : "Create Course"}
         </button>
       </form>
     </div>
