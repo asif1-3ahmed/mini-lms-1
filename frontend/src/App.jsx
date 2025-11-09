@@ -42,15 +42,6 @@ export default function App() {
       .finally(() => setCheckingSession(false));
   }, [navigate]);
 
-  // ⏳ Prevent flicker during session check
-  if (checkingSession)
-    return (
-      <div className="loading-screen">
-        <div className="spinner"></div>
-        <p>Verifying session...</p>
-      </div>
-    );
-
   // 🔔 Auto-dismiss toast after few seconds
   useEffect(() => {
     if (toast) {
@@ -58,6 +49,16 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  // ⏳ Render loading *after* all hooks
+  if (checkingSession) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Verifying session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -82,11 +83,7 @@ export default function App() {
       </div>
 
       {/* 🔔 Toast notifications */}
-      {toast && (
-        <div className={`toast ${toast.type}`}>
-          {toast.text}
-        </div>
-      )}
+      {toast && <div className={`toast ${toast.type}`}>{toast.text}</div>}
     </div>
   );
 }
