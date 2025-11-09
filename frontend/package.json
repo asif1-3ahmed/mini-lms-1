@@ -5,7 +5,7 @@
   "description": "Render-ready React frontend",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm install -g vite && vite build",
     "preview": "vite preview",
     "preinstall": "rm -rf node_modules package-lock.json || true",
     "postinstall": "npm rebuild rollup --force"
