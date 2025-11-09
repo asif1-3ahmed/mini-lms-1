@@ -5,14 +5,18 @@ from .models import (
     Assignment, AssignmentTestCase, AssignmentSubmission
 )
 
-# 🎞️ Topic Video
+# ===============================
+# 🎞️ Topic Video Serializer
+# ===============================
 class TopicVideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TopicVideo
         fields = "__all__"
 
 
-# ❓ Quiz Question
+# ===============================
+# ❓ Quiz Question Serializer
+# ===============================
 class QuizQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuizQuestion
@@ -22,7 +26,9 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
         }
 
 
-# 🧩 Quiz
+# ===============================
+# 🧩 Quiz Serializer
+# ===============================
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuizQuestionSerializer(many=True, read_only=True)
 
@@ -31,7 +37,9 @@ class QuizSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-# 🧠 Quiz Submission
+# ===============================
+# 🧠 Quiz Submission Serializer
+# ===============================
 class QuizSubmissionSerializer(serializers.ModelSerializer):
     quiz_title = serializers.ReadOnlyField(source="quiz.title")
 
@@ -41,14 +49,18 @@ class QuizSubmissionSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "score", "revealed", "reveal_at"]
 
 
-# 🧪 Assignment Test Case
+# ===============================
+# 🧪 Assignment Test Case Serializer
+# ===============================
 class AssignmentTestCaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssignmentTestCase
         fields = "__all__"
 
 
-# 💻 Assignment
+# ===============================
+# 💻 Assignment Serializer
+# ===============================
 class AssignmentSerializer(serializers.ModelSerializer):
     tests = AssignmentTestCaseSerializer(many=True, read_only=True)
 
@@ -57,7 +69,9 @@ class AssignmentSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-# ✍️ Assignment Submission
+# ===============================
+# ✍️ Assignment Submission Serializer
+# ===============================
 class AssignmentSubmissionSerializer(serializers.ModelSerializer):
     assignment_title = serializers.ReadOnlyField(source="assignment.title")
 
@@ -70,7 +84,9 @@ class AssignmentSubmissionSerializer(serializers.ModelSerializer):
         ]
 
 
-# 📘 Topic
+# ===============================
+# 📘 Topic Serializer
+# ===============================
 class TopicSerializer(serializers.ModelSerializer):
     videos = TopicVideoSerializer(many=True, read_only=True)
     quizzes = QuizSerializer(many=True, read_only=True)
@@ -81,7 +97,9 @@ class TopicSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-# 🧱 Week
+# ===============================
+# 🧱 Week Serializer
+# ===============================
 class WeekSerializer(serializers.ModelSerializer):
     topics = TopicSerializer(many=True, read_only=True)
 
@@ -90,7 +108,9 @@ class WeekSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-# 🏫 Course
+# ===============================
+# 🏫 Course Serializer
+# ===============================
 class CourseSerializer(serializers.ModelSerializer):
     weeks = WeekSerializer(many=True, read_only=True)
     instructor_name = serializers.ReadOnlyField(source="instructor.username")
