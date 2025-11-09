@@ -103,18 +103,15 @@ class CourseViewSet(viewsets.ModelViewSet):
 # ===============================
 class WeekViewSet(viewsets.ModelViewSet):
     serializer_class = WeekSerializer
-    authentication_classes = []
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminOrInstructorOrReadOnly]
 
     def get_queryset(self):
-        """
-        ✅ Filter by ?course=<id> if provided
-        """
-        queryset = Week.objects.all().order_by("order")
+        qs = Week.objects.all().order_by("order")
         course_id = self.request.query_params.get("course")
         if course_id:
-            queryset = queryset.filter(course_id=course_id)
-        return queryset
+            qs = qs.filter(course_id=course_id)
+        return qs
 
     def perform_create(self, serializer):
         course = serializer.validated_data.get("course")
