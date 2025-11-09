@@ -130,7 +130,6 @@ class WeekViewSet(viewsets.ModelViewSet):
         for index, week_id in enumerate(order_data):
             Week.objects.filter(id=week_id).update(order=index)
         return Response({"message": "✅ Weeks reordered."})
-            return Response({"error": str(e)}, status=400)
 
 
 # ===============================
