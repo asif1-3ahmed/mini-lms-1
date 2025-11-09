@@ -90,7 +90,7 @@ export default function CourseBuilder({ courseId, onToast }) {
   const addWeek = async () => {
     try {
       setSaving(true);
-      const { data } = await API.post("weeks/", {
+      const { data } = await API.post("courses/weeks/", {
         course: courseId,
         title: `New Week ${weeks.length + 1}`,
         order: weeks.length,
@@ -122,7 +122,7 @@ export default function CourseBuilder({ courseId, onToast }) {
       setSaving(true);
       const week = weeks.find((w) => w.id === weekId);
       const nextOrder = week?.topics?.length || 0;
-      const { data } = await API.post("topics/", {
+      const { data } = await API.post("courses/topics/", {
         week: weekId,
         title: "New Topic",
         order: nextOrder,
@@ -169,7 +169,7 @@ export default function CourseBuilder({ courseId, onToast }) {
         topic: topicId,
         title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
       };
-      const { data } = await API.post(endpoint, payload, {
+      const { data } = await API.post(`courses/${endpoint}`, payload, {
         onUploadProgress: (e) => {
           const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
