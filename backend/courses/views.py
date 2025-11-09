@@ -50,17 +50,24 @@ class CourseViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrInstructorOrReadOnly]
 
     def get_queryset(self):
-        user = self.request.user
-        if not user.is_authenticated:
-            return Course.objects.none()
-
-        if getattr(user, "role", None) in ["admin", "instructor"]:
-            return Course.objects.filter(instructor=user).prefetch_related("weeks", "videos").order_by("-created_at")
-
-        elif getattr(user, "role", None) == "student":
-            return Course.objects.prefetch_related("weeks", "videos").order_by("-created_at")
-
+    user = self.request.user
+    if not user.is_authenticated:
         return Course.objects.none()
+
+    if getattr(user, "role", None) in ["admin", "instructor"]:
+        return (
+            Course.objects.filter(instructor=user)
+            .prefetch_related("weeks__topics__videos", "weeks__topics__quizzes", "weeks__topics__assignments")
+            .order_by("-created_at")
+        )
+
+    elif getattr(user, "role", None) == "student":
+        return (
+            Course.objects.prefetch_related("weeks__topics__videos", "weeks__topics__quizzes", "weeks__topics__assignments")
+            .order_by("-created_at")
+        )
+
+    return Course.objects.none()
 
     def perform_create(self, serializer):
         user = self.request.user
