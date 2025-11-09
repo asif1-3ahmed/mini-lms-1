@@ -8,13 +8,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # 🔐 Security & Environment
 # -----------------------------
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret")
-DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() == "true"
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "*").split(",") if h.strip()]
 
 # -----------------------------
-# 🔌 Installed Apps
+# ⚙️ Installed Apps
 # -----------------------------
 INSTALLED_APPS = [
+    # Default Django
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -22,12 +23,14 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
+    # Third-party
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
     "cloudinary",
     "cloudinary_storage",
 
+    # Local
     "accounts",
     "courses",
 ]
@@ -48,7 +51,7 @@ MIDDLEWARE = [
 ]
 
 # -----------------------------
-# 🎨 Templates (needed for admin)
+# 🎨 Templates (for admin)
 # -----------------------------
 TEMPLATES = [
     {
@@ -70,23 +73,22 @@ ROOT_URLCONF = "backend.urls"
 WSGI_APPLICATION = "backend.wsgi.application"
 
 # -----------------------------
-# 🗃️ Database
+# 🗃️ Database (auto-switchable)
 # -----------------------------
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
-        ssl_require=False,
     )
 }
 
 # -----------------------------
-# 👤 Auth
+# 👤 Authentication
 # -----------------------------
 AUTH_USER_MODEL = "accounts.User"
 
 # -----------------------------
-# 🧠 REST Framework
+# ⚙️ REST Framework
 # -----------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -98,44 +100,38 @@ REST_FRAMEWORK = {
 }
 
 # -----------------------------
-# 📦 Static Files
+# 🧊 Static Files
 # -----------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # -----------------------------
-# 📁 Media (required even if using Cloudinary)
+# 🪣 Media (and Cloudinary)
 # -----------------------------
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
-# -----------------------------
-# 🌩️ Cloudinary Media Storage
-# -----------------------------
 CLOUDINARY_STORAGE = {
     "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
     "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
     "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
 }
-
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 # -----------------------------
-# 🌐 CORS / CSRF Settings
+# 🌐 CORS & CSRF
 # -----------------------------
-# Allow all origins if wildcard, otherwise restrict
 cors_env = os.environ.get("CORS_ALLOWED_ORIGINS", "*").strip()
 if cors_env == "*" or not cors_env:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_env.split(",") if o.strip()]
 
-# Allow frontend for CSRF trust
+# CSRF trusted origins (frontend URL)
 frontend_url = os.environ.get("FRONTEND_URL", "").strip()
 CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
 ]
 if frontend_url:
     CSRF_TRUSTED_ORIGINS = list(set(CSRF_TRUSTED_ORIGINS + [frontend_url]))
-

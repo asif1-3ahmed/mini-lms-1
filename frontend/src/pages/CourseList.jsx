@@ -1,32 +1,35 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import API from "../api";
 
 export default function CourseList() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const navigate = useNavigate();
 
   // 🔄 Fetch all courses
   const fetchCourses = async () => {
     try {
       const { data } = await API.get("courses/");
-      setCourses(data);
+      setCourses(data || []);
     } catch (err) {
       console.error("⚠️ Failed to load courses:", err);
+      alert("Error loading courses. Please refresh.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ❌ Delete course (admin only)
+  // ❌ Delete course (admin/instructor)
   const deleteCourse = async (id) => {
-    if (!window.confirm("Delete this course?")) return;
+    if (!window.confirm("Delete this course permanently?")) return;
     try {
       await API.delete(`courses/${id}/`);
       setCourses((prev) => prev.filter((c) => c.id !== id));
-    } catch {
-      alert("Only admins can delete courses!");
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Only admins/instructors can delete courses!");
     }
   };
 
@@ -36,7 +39,8 @@ export default function CourseList() {
       await API.post(`courses/${id}/enroll/`);
       alert("✅ Enrolled successfully!");
       fetchCourses();
-    } catch {
+    } catch (err) {
+      console.error("Enroll failed:", err);
       alert("❌ Enrollment failed or already enrolled.");
     }
   };
@@ -56,11 +60,13 @@ export default function CourseList() {
     <div className="card course-card">
       <div className="course-header">
         <h1 className="h1">
-          {user.role === "admin" ? "My Courses" : "Available Courses"}
+          {user.role === "admin" || user.role === "instructor"
+            ? "My Courses"
+            : "Available Courses"}
         </h1>
 
-        {/* 🧩 Admin — Add Course Button */}
-        {user.role === "admin" && (
+        {/* 🧩 Admin / Instructor — Add Course */}
+        {(user.role === "admin" || user.role === "instructor") && (
           <Link className="btn primary add-btn" to="/courses/new">
             + Add Course
           </Link>
@@ -74,7 +80,7 @@ export default function CourseList() {
             const hasVideo = course.videos && course.videos.length > 0;
             let thumbnail = null;
 
-            // ⚡ Cloudinary thumbnail generation (1st frame)
+            // ⚡ Cloudinary thumbnail (first frame)
             if (hasVideo && course.videos[0].video_file.includes("cloudinary")) {
               thumbnail = course.videos[0].video_file
                 .replace("/upload/", "/upload/so_1/")
@@ -83,7 +89,7 @@ export default function CourseList() {
 
             return (
               <div key={course.id} className="tile video-tile">
-                {/* 🎞️ Video Thumbnail */}
+                {/* 🎞️ Course Thumbnail */}
                 {hasVideo ? (
                   <div className="video-preview-container">
                     {thumbnail ? (
@@ -105,20 +111,29 @@ export default function CourseList() {
                   <div className="no-thumb">🎬 No Video Available</div>
                 )}
 
-                {/* 📘 Course Details */}
+                {/* 📘 Course Info */}
                 <h3>{course.title}</h3>
-                <p>{course.description}</p>
+                <p>{course.description || "No description provided."}</p>
                 <p className="muted">Category: {course.category}</p>
                 <p>
                   Instructor: <b>{course.instructor_name}</b>
                 </p>
 
-                {/* 🧰 Admin Actions */}
-                {user.role === "admin" && (
+                {/* 🧰 Admin / Instructor Actions */}
+                {(user.role === "admin" || user.role === "instructor") && (
                   <div className="tile-actions">
-                    <Link className="btn small" to={`/courses/edit/${course.id}`}>
+                    <Link
+                      className="btn small"
+                      to={`/courses/edit/${course.id}`}
+                    >
                       Edit
                     </Link>
+                    <button
+                      className="btn small primary"
+                      onClick={() => navigate(`/courses/${course.id}/builder`)}
+                    >
+                      🧱 Build
+                    </button>
                     <button
                       className="btn danger small"
                       onClick={() => deleteCourse(course.id)}
