@@ -17,7 +17,7 @@ urlpatterns = [
     path("api/quizquestions/", include("courses.quizquestion_urls")),
     path("api/quizsubmissions/", include("courses.quizsubmission_urls")),
     path("api/assignments/", include("courses.assignment_urls")),
-    path("api/assignmenttests/", include("courses.assignmenttest_urls")),
+    path("api/assignmenttests/", include("courses.assignmenttestcase_urls")),
     path("api/assignmentsubmissions/", include("courses.assignmentsubmission_urls")),
 
     path("api/accounts/", include("accounts.urls")),
