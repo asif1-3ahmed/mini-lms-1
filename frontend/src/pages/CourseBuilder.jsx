@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import {
   DndContext,
   closestCenter,
@@ -47,20 +48,23 @@ function SortableRow({ id, children }) {
   );
 }
 
-export default function CourseBuilder({ courseId, onToast }) {
+// ---------- Main Component ----------
+export default function CourseBuilder({ onToast }) {
+  const { id: courseId } = useParams(); // ✅ Reads from URL like /courses/3/builder
   const [weeks, setWeeks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // DnD sensors
+  // ---------- DnD Sensors ----------
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 5 } })
   );
 
-  // ---------- Load data ----------
+  // ---------- Load Course Weeks ----------
   useEffect(() => {
+    if (!courseId) return; // avoid undefined API call
     (async () => {
       try {
         const { data } = await API.get(`courses/weeks/?course=${courseId}`);
@@ -89,6 +93,7 @@ export default function CourseBuilder({ courseId, onToast }) {
 
   // ---------- Add Week ----------
   const addWeek = async () => {
+    if (!courseId) return;
     try {
       setSaving(true);
       const { data } = await API.post("courses/weeks/", {
@@ -106,12 +111,9 @@ export default function CourseBuilder({ courseId, onToast }) {
     }
   };
 
-  // ---------- Toggle Week ----------
-  const toggleWeek = (id) => {
-    setWeeks((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, open: !w.open } : w))
-    );
-  };
+  // ---------- Toggle Week Open/Close ----------
+  const toggleWeek = (id) =>
+    setWeeks((prev) => prev.map((w) => (w.id === id ? { ...w, open: !w.open } : w)));
 
   // ---------- Rename Week ----------
   const renameWeek = async (weekId, title) => {
@@ -129,18 +131,14 @@ export default function CourseBuilder({ courseId, onToast }) {
       setSaving(true);
       const week = weeks.find((w) => w.id === weekId);
       const nextOrder = week?.topics?.length || 0;
-
       const { data } = await API.post("courses/topics/", {
         week: weekId,
         title: "New Topic",
         order: nextOrder,
       });
-
       setWeeks((prev) =>
         prev.map((w) =>
-          w.id === weekId
-            ? { ...w, topics: [...(w.topics || []), { ...data, blocks: [] }] }
-            : w
+          w.id === weekId ? { ...w, topics: [...(w.topics || []), { ...data, blocks: [] }] } : w
         )
       );
       onToast?.({ type: "success", text: "📘 Topic added successfully!" });
@@ -157,7 +155,7 @@ export default function CourseBuilder({ courseId, onToast }) {
     setWeeks((prev) =>
       prev.map((w) => ({
         ...w,
-        topics: w.topics.map((t) => (t.id === topicId ? { ...t, title } : t)),
+        topics: (w.topics || []).map((t) => (t.id === topicId ? { ...t, title } : t)),
       }))
     );
     try {
@@ -167,7 +165,7 @@ export default function CourseBuilder({ courseId, onToast }) {
     }
   };
 
-  // ---------- Add Block (Video/Quiz/Assignment) ----------
+  // ---------- Add Video / Quiz / Assignment ----------
   const addBlock = async (weekId, topicId, type) => {
     const endpointMap = {
       video: "topicvideos/",
@@ -226,7 +224,7 @@ export default function CourseBuilder({ courseId, onToast }) {
       <div className="builder-header">
         <h1 className="builder-title">🧱 Course Builder</h1>
         <p className="builder-sub">
-          Manage your course structure. Add weeks, topics, videos, assignments, and quizzes.
+          Add weeks, topics, videos, quizzes, and assignments. Drag to reorder them.
         </p>
       </div>
 
@@ -245,7 +243,7 @@ export default function CourseBuilder({ courseId, onToast }) {
                     />
                   </div>
                   <button
-                    className="btn small glassy add-topic-btn"
+                    className="btn small glassy"
                     onClick={(e) => {
                       e.stopPropagation();
                       addTopic(week.id);
@@ -266,10 +264,7 @@ export default function CourseBuilder({ courseId, onToast }) {
                             onChange={(e) => renameTopic(topic.id, e.target.value)}
                           />
                           <div className="topic-actions">
-                            <button
-                              disabled={saving || uploadProgress > 0}
-                              onClick={() => addBlock(week.id, topic.id, "video")}
-                            >
+                            <button disabled={saving} onClick={() => addBlock(week.id, topic.id, "video")}>
                               <Video size={18} /> Video
                             </button>
                             <button onClick={() => addBlock(week.id, topic.id, "assignment")}>
@@ -279,7 +274,6 @@ export default function CourseBuilder({ courseId, onToast }) {
                               <BookOpen size={18} /> Quiz
                             </button>
                           </div>
-
                           {topic.blocks?.length > 0 && (
                             <div className="blocks-list">
                               {topic.blocks.map((block) => (
@@ -310,10 +304,7 @@ export default function CourseBuilder({ courseId, onToast }) {
 
       {uploadProgress > 0 && (
         <div className="upload-progress glassy">
-          <div
-            className="upload-progress-bar"
-            style={{ width: `${uploadProgress}%` }}
-          ></div>
+          <div className="upload-progress-bar" style={{ width: `${uploadProgress}%` }}></div>
           <p className="upload-progress-text">{uploadProgress}%</p>
         </div>
       )}
