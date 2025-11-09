@@ -102,10 +102,19 @@ class CourseViewSet(viewsets.ModelViewSet):
 # 🧱 WEEK VIEWSET
 # ===============================
 class WeekViewSet(viewsets.ModelViewSet):
-    queryset = Week.objects.all().order_by("order")
     serializer_class = WeekSerializer
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = []
     permission_classes = [IsAdminOrInstructorOrReadOnly]
+
+    def get_queryset(self):
+        """
+        ✅ Filter by ?course=<id> if provided
+        """
+        queryset = Week.objects.all().order_by("order")
+        course_id = self.request.query_params.get("course")
+        if course_id:
+            queryset = queryset.filter(course_id=course_id)
+        return queryset
 
     def perform_create(self, serializer):
         course = serializer.validated_data.get("course")
@@ -114,17 +123,13 @@ class WeekViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You can only add weeks to your own course.")
         serializer.save()
 
-    @action(detail=False, methods=["post"], permission_classes=[IsAdminOrInstructorOrReadOnly])
+    @transaction.atomic
     def reorder(self, request):
         """Reorder weeks for a course"""
-        try:
-            order_data = request.data.get("order", [])
-            with transaction.atomic():
-                for index, week_id in enumerate(order_data):
-                    Week.objects.filter(id=week_id).update(order=index)
-            return Response({"message": "✅ Weeks reordered."})
-        except Exception as e:
-            print("Reorder failed:", e)
+        order_data = request.data.get("order", [])
+        for index, week_id in enumerate(order_data):
+            Week.objects.filter(id=week_id).update(order=index)
+        return Response({"message": "✅ Weeks reordered."})
             return Response({"error": str(e)}, status=400)
 
 
