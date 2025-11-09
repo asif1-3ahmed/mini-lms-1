@@ -29,21 +29,28 @@ from .serializers import (
     AssignmentTestCaseSerializer,
     AssignmentSubmissionSerializer,
 )
-import traceback
 
 
-# 🔒 Custom permission helper
+# ====================================================
+# 🔒 Custom Permission
+# ====================================================
 class IsAdminOrInstructorOrReadOnly(permissions.BasePermission):
+    """Allow only admins/instructors to write; others read-only."""
+
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
         user = request.user
-        return user and user.is_authenticated and getattr(user, "role", None) in ["admin", "instructor"]
+        return (
+            user
+            and user.is_authenticated
+            and getattr(user, "role", None) in ["admin", "instructor"]
+        )
 
 
-# ===============================
+# ====================================================
 # 🏫 COURSE VIEWSET
-# ===============================
+# ====================================================
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     authentication_classes = [TokenAuthentication]
@@ -51,22 +58,21 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        prefetch = [
+            "weeks__topics__videos",
+            "weeks__topics__quizzes",
+            "weeks__topics__assignments",
+        ]
+        qs = Course.objects.select_related("instructor").prefetch_related(*prefetch)
+
         if not user.is_authenticated:
             return Course.objects.none()
 
-        if getattr(user, "role", None) in ["admin", "instructor"]:
-            return (
-                Course.objects.filter(instructor=user)
-                .prefetch_related("weeks__topics__videos", "weeks__topics__quizzes", "weeks__topics__assignments")
-                .order_by("-created_at")
-            )
-
-        elif getattr(user, "role", None) == "student":
-            return (
-                Course.objects.prefetch_related("weeks__topics__videos", "weeks__topics__quizzes", "weeks__topics__assignments")
-                .order_by("-created_at")
-            )
-
+        role = getattr(user, "role", None)
+        if role in ["admin", "instructor"]:
+            return qs.filter(instructor=user).order_by("-created_at")
+        elif role == "student":
+            return qs.order_by("-created_at")
         return Course.objects.none()
 
     def perform_create(self, serializer):
@@ -93,21 +99,24 @@ class CourseViewSet(viewsets.ModelViewSet):
         user = request.user
         if getattr(user, "role", None) != "student":
             return Response({"error": "Only students can view enrolled courses."}, status=403)
-        enrolled = Course.objects.filter(students=user).prefetch_related("weeks", "videos", "instructor")
+        enrolled = Course.objects.filter(students=user).prefetch_related(
+            "weeks__topics__videos", "weeks__topics__quizzes", "weeks__topics__assignments"
+        )
         serializer = self.get_serializer(enrolled, many=True)
         return Response(serializer.data)
 
 
-# ===============================
+# ====================================================
 # 🧱 WEEK VIEWSET
-# ===============================
+# ====================================================
 class WeekViewSet(viewsets.ModelViewSet):
     serializer_class = WeekSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminOrInstructorOrReadOnly]
+    queryset = Week.objects.all().order_by("order")
 
     def get_queryset(self):
-        qs = Week.objects.all().order_by("order")
+        qs = super().get_queryset()
         course_id = self.request.query_params.get("course")
         if course_id:
             qs = qs.filter(course_id=course_id)
@@ -120,18 +129,22 @@ class WeekViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You can only add weeks to your own course.")
         serializer.save()
 
-    @transaction.atomic
+    @action(detail=False, methods=["post"], permission_classes=[IsAdminOrInstructorOrReadOnly])
     def reorder(self, request):
         """Reorder weeks for a course"""
-        order_data = request.data.get("order", [])
-        for index, week_id in enumerate(order_data):
-            Week.objects.filter(id=week_id).update(order=index)
-        return Response({"message": "✅ Weeks reordered."})
+        try:
+            order_data = request.data.get("order", [])
+            with transaction.atomic():
+                for index, week_id in enumerate(order_data):
+                    Week.objects.filter(id=week_id).update(order=index)
+            return Response({"message": "✅ Weeks reordered."})
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
 
 
-# ===============================
+# ====================================================
 # 📘 TOPIC VIEWSET
-# ===============================
+# ====================================================
 class TopicViewSet(viewsets.ModelViewSet):
     queryset = Topic.objects.all().order_by("order")
     serializer_class = TopicSerializer
@@ -155,12 +168,29 @@ class TopicViewSet(viewsets.ModelViewSet):
                     Topic.objects.filter(id=topic_id).update(order=index)
             return Response({"message": "✅ Topics reordered."})
         except Exception as e:
-            print("Topic reorder failed:", e)
             return Response({"error": str(e)}, status=400)
 
-# ===============================
+
+# ====================================================
+# 🎞️ TOPIC VIDEO VIEWSET
+# ====================================================
+class TopicVideoViewSet(viewsets.ModelViewSet):
+    queryset = TopicVideo.objects.all().order_by("-created_at")
+    serializer_class = TopicVideoSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAdminOrInstructorOrReadOnly]
+
+    def perform_create(self, serializer):
+        topic = serializer.validated_data.get("topic")
+        user = self.request.user
+        if topic.week.course.instructor != user:
+            raise PermissionDenied("You can only add videos to your own course.")
+        serializer.save()
+
+
+# ====================================================
 # 🧩 QUIZ VIEWSET
-# ===============================
+# ====================================================
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
@@ -175,7 +205,9 @@ class QuizViewSet(viewsets.ModelViewSet):
         serializer.save()
 
 
-# 🧠 QUIZ QUESTION REORDER + CRUD
+# ====================================================
+# 🧠 QUIZ QUESTION VIEWSET
+# ====================================================
 class QuizQuestionViewSet(viewsets.ModelViewSet):
     queryset = QuizQuestion.objects.all()
     serializer_class = QuizQuestionSerializer
@@ -198,9 +230,9 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
         return Response({"message": "✅ Questions reordered."})
 
 
-# ===============================
-# 🧑‍🎓 QUIZ SUBMISSIONS
-# ===============================
+# ====================================================
+# 🧑‍🎓 QUIZ SUBMISSION VIEWSET
+# ====================================================
 class QuizSubmissionViewSet(viewsets.ModelViewSet):
     queryset = QuizSubmission.objects.all()
     serializer_class = QuizSubmissionSerializer
@@ -213,12 +245,12 @@ class QuizSubmissionViewSet(viewsets.ModelViewSet):
         if getattr(user, "role", None) != "student":
             raise PermissionDenied("Only students can submit quizzes.")
         submission = serializer.save(student=user)
-        submission.reveal_at = quiz.reveal_at_for(submission.created_at)
-        submission.save(update_fields=["reveal_at"])
+        if hasattr(quiz, "reveal_at_for"):
+            submission.reveal_at = quiz.reveal_at_for(submission.created_at)
+            submission.save(update_fields=["reveal_at"])
 
     @action(detail=True, methods=["get"])
     def result(self, request, pk=None):
-        """Return quiz results only if reveal date passed"""
         submission = self.get_object()
         if timezone.now() < (submission.reveal_at or timezone.now()):
             return Response({"message": "⏳ Results will be revealed soon."})
@@ -227,9 +259,9 @@ class QuizSubmissionViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(submission).data)
 
 
-# ===============================
-# 💻 ASSIGNMENT VIEWSET
-# ===============================
+# ====================================================
+# 💻 ASSIGNMENT VIEWSETS
+# ====================================================
 class AssignmentViewSet(viewsets.ModelViewSet):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
@@ -244,7 +276,6 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         serializer.save()
 
 
-# 🧪 TEST CASE VIEWSET
 class AssignmentTestCaseViewSet(viewsets.ModelViewSet):
     queryset = AssignmentTestCase.objects.all().order_by("order")
     serializer_class = AssignmentTestCaseSerializer
@@ -253,16 +284,12 @@ class AssignmentTestCaseViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"])
     def reorder(self, request):
-        """Reorder test cases"""
         order_data = request.data.get("order", [])
         for index, tid in enumerate(order_data):
             AssignmentTestCase.objects.filter(id=tid).update(order=index)
         return Response({"message": "✅ Test cases reordered."})
 
 
-# ===============================
-# ✍️ ASSIGNMENT SUBMISSION VIEWSET
-# ===============================
 class AssignmentSubmissionViewSet(viewsets.ModelViewSet):
     queryset = AssignmentSubmission.objects.all()
     serializer_class = AssignmentSubmissionSerializer
@@ -275,26 +302,14 @@ class AssignmentSubmissionViewSet(viewsets.ModelViewSet):
         if getattr(user, "role", None) != "student":
             raise PermissionDenied("Only students can submit assignments.")
         submission = serializer.save(student=user)
-        submission.schedule_evaluation()
+        if hasattr(submission, "schedule_evaluation"):
+            submission.schedule_evaluation()
 
     @action(detail=True, methods=["get"])
     def result(self, request, pk=None):
-        """Return result if reveal time passed"""
         submission = self.get_object()
         if timezone.now() < (submission.reveal_at or timezone.now()):
             return Response({"message": "⏳ Results will be revealed soon."})
         submission.revealed = True
         submission.save(update_fields=["revealed"])
         return Response(self.get_serializer(submission).data)
-class TopicVideoViewSet(viewsets.ModelViewSet):
-    queryset = TopicVideo.objects.all().order_by("-created_at")
-    serializer_class = TopicVideoSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAdminOrInstructorOrReadOnly]
-
-    def perform_create(self, serializer):
-        topic = serializer.validated_data.get("topic")
-        user = self.request.user
-        if topic.week.course.instructor != user:
-            raise PermissionDenied("You can only add videos to your own course.")
-        serializer.save()
