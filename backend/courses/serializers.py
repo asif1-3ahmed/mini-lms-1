@@ -112,9 +112,19 @@ class WeekSerializer(serializers.ModelSerializer):
 # 🏫 Course Serializer
 # ===============================
 class CourseSerializer(serializers.ModelSerializer):
-    weeks = WeekSerializer(many=True, read_only=True)
     instructor_name = serializers.ReadOnlyField(source="instructor.username")
+    weeks = WeekSerializer(many=True, read_only=True)
 
     class Meta:
         model = Course
-        fields = "__all__"
+        fields = [
+            "id",
+            "title",
+            "description",
+            "category",
+            "instructor",
+            "instructor_name",
+            "weeks",
+            "created_at",
+        ]
+        read_only_fields = ["instructor", "instructor_name", "created_at"]
