@@ -2,10 +2,10 @@
   "name": "frontend",
   "private": true,
   "version": "1.0.0",
-  "description": "Render-ready React frontend",
+  "description": "Render-ready React frontend (no .nvmrc needed)",
   "scripts": {
     "dev": "vite",
-    "build": "npm install -g vite && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "preinstall": "rm -rf node_modules package-lock.json || true",
     "postinstall": "npm rebuild rollup --force"
@@ -27,7 +27,7 @@
     "rollup": "4.13.0"
   },
   "engines": {
-    "node": "20.15.1",
-    "npm": "10.x"
+    "node": ">=20.19.0",
+    "npm": ">=10.0.0"
   }
 }
