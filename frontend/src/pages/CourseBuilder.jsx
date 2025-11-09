@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import API from "../api";
 
-// ---------- Sortable row component (generic) ----------
+// ---------- Sortable row ----------
 function SortableRow({ id, children, dragHandle = true }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
@@ -54,8 +54,8 @@ export default function CourseBuilder({ courseId, onToast }) {
   const [weeks, setWeeks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  // dnd-kit sensors (mouse + touch)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 5 } })
@@ -65,11 +65,8 @@ export default function CourseBuilder({ courseId, onToast }) {
   useEffect(() => {
     (async () => {
       try {
-        // Expecting backend to support filtering: /weeks/?course=<id>
         const { data } = await API.get(`weeks/?course=${courseId}`);
-        // Ensure each week has open flag + topics array
         const normalized = data.map((w) => ({ open: true, topics: [], ...w }));
-        // Load topics for each week
         const withTopics = await Promise.all(
           normalized.map(async (w) => {
             try {
@@ -89,7 +86,7 @@ export default function CourseBuilder({ courseId, onToast }) {
     })();
   }, [courseId]);
 
-  // ---------- Add Week / Topic / Block ----------
+  // ---------- Add week/topic/block ----------
   const addWeek = async () => {
     try {
       setSaving(true);
@@ -167,11 +164,18 @@ export default function CourseBuilder({ courseId, onToast }) {
     const endpoint = endpointMap[type];
     try {
       setSaving(true);
+      setUploadProgress(0);
       const payload = {
         topic: topicId,
         title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
       };
-      const { data } = await API.post(endpoint, payload);
+      const { data } = await API.post(endpoint, payload, {
+        onUploadProgress: (e) => {
+          const percent = Math.round((e.loaded * 100) / e.total);
+          setUploadProgress(percent);
+        },
+      });
+
       setWeeks((prev) =>
         prev.map((w) =>
           w.id === weekId
@@ -190,67 +194,12 @@ export default function CourseBuilder({ courseId, onToast }) {
       onToast?.({ type: "error", text: `Failed to add ${type}` });
     } finally {
       setSaving(false);
+      setUploadProgress(0);
     }
   };
 
-  // ---------- Reorder helpers (persist to API) ----------
-  const persistWeekOrder = async (orderedWeekIds) => {
-    // PATCH each week with its new order index
-    try {
-      await Promise.all(
-        orderedWeekIds.map((wid, idx) => API.patch(`weeks/${wid}/`, { order: idx }))
-      );
-    } catch (e) {
-      console.error("Persist week order failed:", e);
-    }
-  };
-
-  const persistTopicOrder = async (weekId, orderedTopicIds) => {
-    try {
-      await Promise.all(
-        orderedTopicIds.map((tid, idx) => API.patch(`topics/${tid}/`, { order: idx }))
-      );
-    } catch (e) {
-      console.error("Persist topic order failed:", e);
-    }
-  };
-
-  // ---------- Reorder handlers ----------
+  // ---------- Reorder ----------
   const weekIds = useMemo(() => weeks.map((w) => String(w.id)), [weeks]);
-
-  const onDragEnd = async (event) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const [type, ownerId, entityId] = String(active.id).split(":"); // e.g., "week:_:12" or "topic:5:33"
-    const [typeOver, ownerIdOver, entityIdOver] = String(over.id).split(":");
-
-    // Reorder weeks
-    if (type === "week" && typeOver === "week") {
-      const currentIndex = weeks.findIndex((w) => String(w.id) === entityId);
-      const overIndex = weeks.findIndex((w) => String(w.id) === entityIdOver);
-      const newWeeks = arrayMove(weeks, currentIndex, overIndex);
-      setWeeks(newWeeks);
-      await persistWeekOrder(newWeeks.map((w) => w.id));
-      return;
-    }
-
-    // Reorder topics within the same week
-    if (type === "topic" && typeOver === "topic" && ownerId === ownerIdOver) {
-      const wIndex = weeks.findIndex((w) => String(w.id) === ownerId);
-      if (wIndex === -1) return;
-      const topicList = weeks[wIndex].topics || [];
-      const curIndex = topicList.findIndex((t) => String(t.id) === entityId);
-      const ovIndex = topicList.findIndex((t) => String(t.id) === entityIdOver);
-      const newTopicList = arrayMove(topicList, curIndex, ovIndex);
-
-      const cloned = [...weeks];
-      cloned[wIndex] = { ...cloned[wIndex], topics: newTopicList };
-      setWeeks(cloned);
-      await persistTopicOrder(Number(ownerId), newTopicList.map((t) => t.id));
-      return;
-    }
-  };
 
   if (loading) return <div className="card"><p>Loading builder...</p></div>;
 
@@ -261,7 +210,7 @@ export default function CourseBuilder({ courseId, onToast }) {
         <p className="builder-sub">Drag to reorder weeks & topics. Add videos, assignments, quizzes.</p>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter}>
         <SortableContext items={weekIds.map((id) => `week:_:${id}`)} strategy={verticalListSortingStrategy}>
           {weeks.map((week) => (
             <SortableRow key={`week:_:${week.id}`} id={`week:_:${week.id}`}>
@@ -275,55 +224,57 @@ export default function CourseBuilder({ courseId, onToast }) {
                       onChange={(e) => renameWeek(week.id, e.target.value)}
                     />
                   </div>
-                  <button className="btn small add-topic-btn" onClick={(e) => { e.stopPropagation(); addTopic(week.id); }}>
+                  <button
+                    className="btn small add-topic-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addTopic(week.id);
+                    }}
+                  >
                     + Add Topic
                   </button>
                 </div>
 
                 {week.open && (
                   <div className="topics-list">
-                    <SortableContext
-                      items={(week.topics || []).map((t) => `topic:${week.id}:${t.id}`)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {week.topics?.length ? (
-                        week.topics.map((topic) => (
-                          <SortableRow key={`topic:${week.id}:${topic.id}`} id={`topic:${week.id}:${topic.id}`}>
-                            <div className="topic-card">
-                              <input
-                                className="topic-input"
-                                value={topic.title}
-                                onChange={(e) => renameTopic(topic.id, e.target.value)}
-                              />
-                              <div className="topic-actions">
-                                <button onClick={() => addBlock(week.id, topic.id, "video")}>
-                                  <Video size={18} /> Video
-                                </button>
-                                <button onClick={() => addBlock(week.id, topic.id, "assignment")}>
-                                  <Code2 size={18} /> Assignment
-                                </button>
-                                <button onClick={() => addBlock(week.id, topic.id, "quiz")}>
-                                  <BookOpen size={18} /> Quiz
-                                </button>
-                              </div>
+                    {week.topics?.length ? (
+                      week.topics.map((topic) => (
+                        <div key={topic.id} className="topic-card">
+                          <input
+                            className="topic-input"
+                            value={topic.title}
+                            onChange={(e) => renameTopic(topic.id, e.target.value)}
+                          />
+                          <div className="topic-actions">
+                            <button
+                              disabled={saving || uploadProgress > 0}
+                              onClick={() => addBlock(week.id, topic.id, "video")}
+                            >
+                              <Video size={18} /> Video
+                            </button>
+                            <button onClick={() => addBlock(week.id, topic.id, "assignment")}>
+                              <Code2 size={18} /> Assignment
+                            </button>
+                            <button onClick={() => addBlock(week.id, topic.id, "quiz")}>
+                              <BookOpen size={18} /> Quiz
+                            </button>
+                          </div>
 
-                              {topic.blocks?.length > 0 && (
-                                <div className="blocks-list">
-                                  {topic.blocks.map((block) => (
-                                    <div key={`${block.type}-${block.id}`} className={`block-item block-${block.type}`}>
-                                      <strong className="block-title">{block.title}</strong>
-                                      <p className="muted small">Type: {block.type}</p>
-                                    </div>
-                                  ))}
+                          {topic.blocks?.length > 0 && (
+                            <div className="blocks-list">
+                              {topic.blocks.map((block) => (
+                                <div key={`${block.type}-${block.id}`} className={`block-item block-${block.type}`}>
+                                  <strong className="block-title">{block.title}</strong>
+                                  <p className="muted small">Type: {block.type}</p>
                                 </div>
-                              )}
+                              ))}
                             </div>
-                          </SortableRow>
-                        ))
-                      ) : (
-                        <div className="empty-state small">No topics yet. Add one 👆</div>
-                      )}
-                    </SortableContext>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="empty-state small">No topics yet. Add one 👆</div>
+                    )}
                   </div>
                 )}
               </div>
@@ -336,6 +287,13 @@ export default function CourseBuilder({ courseId, onToast }) {
       <button className="btn primary add-week-btn" onClick={addWeek} disabled={saving}>
         {saving ? <Loader2 className="spin" /> : <Plus />} Add Week
       </button>
+
+      {uploadProgress > 0 && (
+        <div className="upload-progress">
+          <div className="upload-progress-bar" style={{ width: `${uploadProgress}%` }}></div>
+          <p className="upload-progress-text">{uploadProgress}%</p>
+        </div>
+      )}
     </div>
   );
 }
