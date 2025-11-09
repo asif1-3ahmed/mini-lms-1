@@ -135,3 +135,16 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
         if quiz.topic.week.course.instructor != user:
             raise PermissionDenied("You can only add questions to your own quiz.")
         serializer.save()
+        
+class AssignmentTestCaseViewSet(viewsets.ModelViewSet):
+    queryset = AssignmentTestCase.objects.all().order_by("order")
+    serializer_class = AssignmentTestCaseSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAdminOrInstructorOrReadOnly]
+
+    def perform_create(self, serializer):
+        assignment = serializer.validated_data.get("assignment")
+        user = self.request.user
+        if assignment.topic.week.course.instructor != user:
+            raise PermissionDenied("You can only add test cases to your own assignment.")
+        serializer.save()
