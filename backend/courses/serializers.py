@@ -20,6 +20,10 @@ class TopicVideoSerializer(serializers.ModelSerializer):
         model = TopicVideo
         fields = ["id", "topic", "title", "description", "video_file", "created_at"]
         read_only_fields = ["created_at"]
+        extra_kwargs = {
+            "description": {"required": False, "allow_blank": True},
+            "video_file": {"required": False, "allow_null": True},
+        }
 
 
 # ===============================
@@ -46,7 +50,7 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
 # 🧩 Quiz Serializer (with nested questions)
 # ===============================
 class QuizSerializer(serializers.ModelSerializer):
-    questions = QuizQuestionSerializer(many=True)
+    questions = QuizQuestionSerializer(many=True, required=False)  # ✅ optional now
 
     class Meta:
         model = Quiz
@@ -132,6 +136,10 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["created_at"]
+        extra_kwargs = {
+            "description": {"required": False, "allow_blank": True},
+            "allowed_languages": {"required": False, "allow_blank": True},
+        }
 
 
 # ===============================
@@ -168,7 +176,9 @@ class AssignmentSubmissionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         submission = super().create(validated_data)
-        submission.schedule_evaluation()
+        # if model defines schedule_evaluation safely
+        if hasattr(submission, "schedule_evaluation"):
+            submission.schedule_evaluation()
         return submission
 
 
@@ -221,7 +231,11 @@ class CourseSerializer(serializers.ModelSerializer):
             "category",
             "instructor",
             "instructor_name",
-            "weeks",  # new nested content
+            "weeks",  # nested structure
             "created_at",
         ]
         read_only_fields = ["instructor", "instructor_name", "created_at"]
+        extra_kwargs = {
+            "description": {"required": False, "allow_blank": True},
+            "category": {"required": False, "allow_blank": True},
+        }
