@@ -67,13 +67,13 @@ export default function CourseBuilder({ onToast }) {
     if (!courseId) return; // avoid undefined API call
     (async () => {
       try {
-        const { data } = await API.get(`courses/weeks/?course=${courseId}`);
+        const { data } = await API.get(`weeks/?course=${courseId}`);
         const normalized = data.map((w) => ({ open: true, topics: [], ...w }));
 
         const withTopics = await Promise.all(
           normalized.map(async (w) => {
             try {
-              const { data: tdata } = await API.get(`courses/topics/?week=${w.id}`);
+              const { data: tdata } = await API.get(`topics/?week=${w.id}`);
               return { ...w, topics: tdata.map((t) => ({ ...t, blocks: t.blocks || [] })) };
             } catch {
               return w;
@@ -96,7 +96,7 @@ export default function CourseBuilder({ onToast }) {
     if (!courseId) return;
     try {
       setSaving(true);
-      const { data } = await API.post("courses/weeks/", {
+      const { data } = await API.post("weeks/", {
         course: courseId,
         title: `New Week ${weeks.length + 1}`,
         order: weeks.length,
@@ -119,7 +119,7 @@ export default function CourseBuilder({ onToast }) {
   const renameWeek = async (weekId, title) => {
     setWeeks((prev) => prev.map((w) => (w.id === weekId ? { ...w, title } : w)));
     try {
-      await API.patch(`courses/weeks/${weekId}/`, { title });
+      await API.patch(`weeks/${weekId}/`, { title });
     } catch (e) {
       console.error("Failed to rename week:", e);
     }
@@ -131,7 +131,7 @@ export default function CourseBuilder({ onToast }) {
       setSaving(true);
       const week = weeks.find((w) => w.id === weekId);
       const nextOrder = week?.topics?.length || 0;
-      const { data } = await API.post("courses/topics/", {
+      const { data } = await API.post("topics/", {
         week: weekId,
         title: "New Topic",
         order: nextOrder,
@@ -159,7 +159,7 @@ export default function CourseBuilder({ onToast }) {
       }))
     );
     try {
-      await API.patch(`courses/topics/${topicId}/`, { title });
+      await API.patch(`topics/${topicId}/`, { title });
     } catch (e) {
       console.error("Failed to rename topic:", e);
     }
@@ -183,7 +183,7 @@ export default function CourseBuilder({ onToast }) {
         title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
       };
 
-      const { data } = await API.post(`courses/${endpoint}`, payload, {
+      const { data } = await API.post(`${endpoint}`, payload, {
         onUploadProgress: (e) => {
           const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
