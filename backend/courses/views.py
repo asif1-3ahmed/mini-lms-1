@@ -122,3 +122,16 @@ class AssignmentSubmissionViewSet(viewsets.ModelViewSet):
     serializer_class = AssignmentSubmissionSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+
+class QuizQuestionViewSet(viewsets.ModelViewSet):
+    queryset = QuizQuestion.objects.all()
+    serializer_class = QuizQuestionSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAdminOrInstructorOrReadOnly]
+
+    def perform_create(self, serializer):
+        quiz = serializer.validated_data.get("quiz")
+        user = self.request.user
+        if quiz.topic.week.course.instructor != user:
+            raise PermissionDenied("You can only add questions to your own quiz.")
+        serializer.save()
