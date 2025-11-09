@@ -1,15 +1,12 @@
 from django.db import models
 from django.conf import settings
-from django.db.models.signals import post_delete
-from django.dispatch import receiver
-from cloudinary.uploader import destroy
 from django.utils import timezone
 from datetime import timedelta
 
 User = settings.AUTH_USER_MODEL
 
 
-# 🧱 COURSE MODEL
+# 🏫 COURSE MODEL
 class Course(models.Model):
     CATEGORY_CHOICES = [
         ("programming", "Programming"),
@@ -34,7 +31,7 @@ class Course(models.Model):
         return self.title
 
 
-# 🧩 WEEK MODEL
+# 🧱 WEEK MODEL
 class Week(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="weeks")
     title = models.CharField(max_length=200, default="Untitled Week")
@@ -61,7 +58,7 @@ class Topic(models.Model):
         return f"{self.week.title} → {self.title}"
 
 
-# 🎥 VIDEO (attached to Topic)
+# 🎞 TOPIC VIDEO
 class TopicVideo(models.Model):
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="videos")
     title = models.CharField(max_length=200)
@@ -76,7 +73,7 @@ class TopicVideo(models.Model):
         return f"{self.title} ({self.topic.title})"
 
 
-# 🧮 QUIZ MODEL
+# 🧩 QUIZ MODEL
 class Quiz(models.Model):
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="quizzes")
     title = models.CharField(max_length=200, default="New Quiz")
@@ -90,18 +87,15 @@ class Quiz(models.Model):
         ordering = ["created_at"]
 
     def reveal_at_for(self, submitted_at=None):
-        """
-        Compute when results become visible for a submission.
-        """
         baseline = submitted_at or timezone.now()
         close_ref = self.close_at or baseline
         return close_ref + timedelta(days=self.reveal_after_days)
 
     def __str__(self):
-        return f"Quiz: {self.title} ({self.topic.title})"
+        return f"Quiz: {self.title}"
 
 
-# ❓ QUIZ QUESTION MODEL
+# ❓ QUIZ QUESTION
 class QuizQuestion(models.Model):
     TEXT = "text"
     MCQ = "mcq"
@@ -110,8 +104,8 @@ class QuizQuestion(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
     prompt = models.TextField()
     type = models.CharField(max_length=10, choices=TYPES, default=TEXT)
-    choices = models.JSONField(default=list, blank=True)  # ["A", "B", "C", "D"]
-    correct_answer = models.TextField(blank=True, default="")  # Hidden from students
+    choices = models.JSONField(default=list, blank=True)
+    correct_answer = models.TextField(blank=True, default="")
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -140,7 +134,7 @@ class QuizSubmission(models.Model):
         return f"{self.student} — {self.quiz.title}"
 
 
-# 🧑‍💻 ASSIGNMENT MODEL
+# 💻 ASSIGNMENT MODEL
 class Assignment(models.Model):
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="assignments")
     title = models.CharField(max_length=200, default="New Assignment")
@@ -159,7 +153,7 @@ class Assignment(models.Model):
         return f"Assignment: {self.title}"
 
 
-# 🧪 ASSIGNMENT TEST CASES
+# 🧪 ASSIGNMENT TEST CASE
 class AssignmentTestCase(models.Model):
     assignment = models.ForeignKey(
         Assignment, on_delete=models.CASCADE, related_name="tests"
@@ -187,9 +181,7 @@ class AssignmentSubmission(models.Model):
     code = models.TextField()
     language = models.CharField(max_length=20, default="python")
     created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(
-        max_length=20, default="pending"
-    )  # pending | queued | graded
+    status = models.CharField(max_length=20, default="pending")
     grade = models.FloatField(null=True, blank=True)
     details = models.JSONField(default=dict, blank=True)
     autograde_at = models.DateTimeField(null=True, blank=True)
@@ -199,28 +191,5 @@ class AssignmentSubmission(models.Model):
     class Meta:
         unique_together = ("assignment", "student")
 
-    def schedule_evaluation(self):
-        """
-        Automatically compute autograde and reveal deadlines.
-        """
-        now = timezone.now()
-        if not self.autograde_at:
-            self.autograde_at = now + timedelta(days=self.assignment.autograde_after_days)
-        if not self.reveal_at:
-            self.reveal_at = now + timedelta(days=self.assignment.reveal_after_days)
-        self.save(update_fields=["autograde_at", "reveal_at"])
-
     def __str__(self):
-        return f"{self.student} → {self.assignment.title}"
-
-
-# 🧹 AUTO DELETE VIDEO FROM CLOUDINARY WHEN REMOVED
-@receiver(post_delete, sender=TopicVideo)
-def delete_topic_video_from_cloudinary(sender, instance, **kwargs):
-    if instance.video_file:
-        try:
-            public_id = instance.video_file.name.split("/")[-1].split(".")[0]
-            destroy(public_id, resource_type="video")
-            print(f"🗑️ Deleted video from Cloudinary: {public_id}")
-        except Exception as e:
-            print(f"⚠️ Cloudinary delete failed: {e}")
+        return f"{self.student} — {self.assignment.title}"
