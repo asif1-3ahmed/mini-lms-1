@@ -6,9 +6,10 @@ export default function Navbar({ onToast }) {
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
   const logout = () => {
+    if (!window.confirm("Are you sure you want to log out?")) return;
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    onToast?.({ type: "success", text: "Logged out." });
+    onToast?.({ type: "success", text: "Logged out successfully." });
     navigate("/");
   };
 
@@ -19,61 +20,52 @@ export default function Navbar({ onToast }) {
   };
 
   return (
-    <div className="navbar">
-      <div className="brand" onClick={goDash} style={{ cursor: "pointer" }}>
-        <div className="logo" />
-        <div className="title">NovaLearn</div>
+    <nav className="navbar glassy">
+      <div className="brand" onClick={goDash}>
+        <div className="logo-glow" />
+        <span className="brand-text">NovaLearn</span>
       </div>
 
       <div className="nav-actions">
         {user ? (
           <>
-            <div className="muted">
+            <span className="nav-user">
               Hi, <b>{user.username}</b> · {user.role}
-            </div>
+            </span>
 
-            {/* 👇 Admin-only Add Course Button */}
             {user?.role === "admin" && (
-              <button
-                className="btn primary"
-                onClick={() => navigate("/courses/new")}
-              >
+              <button className="btn glassy primary" onClick={() => navigate("/courses/new")}>
                 + Add Course
               </button>
             )}
 
-            {/* 👇 Student-only My Courses Button */}
             {user?.role === "student" && (
-              <button className="btn primary" onClick={() => navigate("/mycourses")}>
+              <button className="btn glassy primary" onClick={() => navigate("/mycourses")}>
                 My Courses
               </button>
             )}
 
-            {/* Common buttons */}
-            <button className="btn" onClick={() => navigate("/courses")}>
+            <button className="btn glassy" onClick={() => navigate("/courses")}>
               Courses
             </button>
-            <button className="btn" onClick={goDash}>
+            <button className="btn glassy" onClick={goDash}>
               Dashboard
             </button>
-            <button className="btn" onClick={logout}>
+            <button className="btn glassy danger" onClick={logout}>
               Logout
             </button>
           </>
         ) : (
           <>
-            <button className="btn" onClick={() => navigate("/")}>
+            <button className="btn glassy" onClick={() => navigate("/")}>
               Login
             </button>
-            <button
-              className="btn primary"
-              onClick={() => navigate("/register")}
-            >
-              Create account
+            <button className="btn glassy primary" onClick={() => navigate("/register")}>
+              Create Account
             </button>
           </>
         )}
       </div>
-    </div>
+    </nav>
   );
 }

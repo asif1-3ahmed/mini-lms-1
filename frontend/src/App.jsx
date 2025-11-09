@@ -9,18 +9,22 @@ import AdminDashboard from "./pages/AdminDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import CourseList from "./pages/CourseList";
 import CourseForm from "./pages/CourseForm";
-import CourseBuilder from "./pages/CourseBuilder"; // ✅ NEW IMPORT
+import CourseBuilder from "./pages/CourseBuilder";
 import MyCourses from "./pages/MyCourses";
 import API from "./api";
 
 export default function App() {
   const [toast, setToast] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
   const navigate = useNavigate();
 
-  // ✅ Verify user session on load
+  // ✅ Verify session once on app load
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token) {
+      setCheckingSession(false);
+      return;
+    }
 
     API.get("accounts/me/")
       .then(({ data }) => {
@@ -34,8 +38,26 @@ export default function App() {
           text: "Session expired. Please log in again.",
         });
         navigate("/");
-      });
+      })
+      .finally(() => setCheckingSession(false));
   }, [navigate]);
+
+  // ⏳ Prevent flicker during session check
+  if (checkingSession)
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Verifying session...</p>
+      </div>
+    );
+
+  // 🔔 Auto-dismiss toast after few seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   return (
     <div className="app-shell">
@@ -51,19 +73,20 @@ export default function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/student" element={<StudentDashboard />} />
             <Route path="/courses" element={<CourseList />} />
-            <Route path="/courses/new" element={<CourseForm />} />
-            <Route path="/courses/edit/:id" element={<CourseForm edit />} />
-
-            {/* 🧱 NEW: Course Builder (for instructors/admins only) */}
-            <Route path="/courses/:id/builder" element={<CourseBuilder />} />
-
+            <Route path="/courses/new" element={<CourseForm onToast={setToast} />} />
+            <Route path="/courses/edit/:id" element={<CourseForm edit onToast={setToast} />} />
+            <Route path="/courses/:id/builder" element={<CourseBuilder onToast={setToast} />} />
             <Route path="/mycourses" element={<MyCourses />} />
           </Route>
         </Routes>
       </div>
 
       {/* 🔔 Toast notifications */}
-      {toast && <div className={`toast ${toast.type}`}>{toast.text}</div>}
+      {toast && (
+        <div className={`toast ${toast.type}`}>
+          {toast.text}
+        </div>
+      )}
     </div>
   );
 }

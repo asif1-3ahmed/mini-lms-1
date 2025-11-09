@@ -78,7 +78,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         if getattr(user, "role", None) != "student":
             return Response({"error": "Only students can enroll."}, status=403)
         course.students.add(user)
-        return Response({"message": "✅ Enrolled successfully!"})
+        return Response({"message": "✅ Enrolled successfully!", "course": CourseSerializer(course).data})
 
     # 🎓 Student’s enrolled courses
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
@@ -278,3 +278,15 @@ class AssignmentSubmissionViewSet(viewsets.ModelViewSet):
         submission.revealed = True
         submission.save(update_fields=["revealed"])
         return Response(self.get_serializer(submission).data)
+class TopicVideoViewSet(viewsets.ModelViewSet):
+    queryset = TopicVideo.objects.all().order_by("-created_at")
+    serializer_class = TopicVideoSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAdminOrInstructorOrReadOnly]
+
+    def perform_create(self, serializer):
+        topic = serializer.validated_data.get("topic")
+        user = self.request.user
+        if topic.week.course.instructor != user:
+            raise PermissionDenied("You can only add videos to your own course.")
+        serializer.save()

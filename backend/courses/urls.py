@@ -2,6 +2,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     CourseViewSet,
     WeekViewSet,
+    TopicVideoViewSet,
     TopicViewSet,
     QuizViewSet,
     QuizQuestionViewSet,
@@ -30,6 +31,9 @@ router.register(r"weeks", WeekViewSet, basename="weeks")
 router.register(r"quizzes", QuizViewSet, basename="quizzes")
 router.register(r"quizquestions", QuizQuestionViewSet, basename="quizquestions")
 router.register(r"quizsubmissions", QuizSubmissionViewSet, basename="quizsubmissions")
+
+router.register(r"topics", TopicViewSet, basename="topics")  # ✅ missing
+router.register(r"topicvideos", TopicVideoViewSet, basename="topicvideos") 
 
 # ===============================
 # 💻 Assignments & Test Cases
