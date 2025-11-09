@@ -14,14 +14,13 @@
     "@dnd-kit/utilities": "^3.2.2",
     "axios": "^1.7.7",
     "lucide-react": "^0.553.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
     "react-player": "^3.3.3",
     "react-router-dom": "^6.26.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.1.0",
-    "react-scripts": "5.0.1",
     "vite": "^7.2.2"
   }
 }
