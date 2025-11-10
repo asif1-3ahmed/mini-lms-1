@@ -26,7 +26,7 @@ class TopicVideoSerializer(serializers.ModelSerializer):
             "topic_title",
             "title",
             "description",
-            "video",         # ✅ renamed from video_file
+            "video",  # ✅ matches model + frontend form key
             "created_at",
         ]
         read_only_fields = ["id", "created_at", "topic_title"]
@@ -41,12 +41,12 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "quiz",
-            "question_text",     # ✅ was 'prompt'
-            "option_a",          # ✅ new fields
+            "question_text",  # ✅ was 'prompt'
+            "option_a",
             "option_b",
             "option_c",
             "option_d",
-            "correct_option",    # ✅ single letter (A/B/C/D)
+            "correct_option",  # ✅ single letter (A/B/C/D)
             "order",
         ]
         read_only_fields = ["id"]
@@ -144,7 +144,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "allowed_languages",
-            "code_blocks",           # ✅ new field (for code block UI)
+            "code_blocks",  # ✅ new JSON field
             "open_at",
             "due_at",
             "autograde_after_days",
@@ -210,7 +210,7 @@ class TopicSerializer(serializers.ModelSerializer):
             "week",
             "week_title",
             "title",
-            "subheading",   # ✅ added field
+            "subheading",  # ✅ new field
             "content",
             "order",
             "videos",
