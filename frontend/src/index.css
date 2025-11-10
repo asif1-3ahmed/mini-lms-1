@@ -713,3 +713,101 @@ a {
   0% { background-position: 0% 50%; }
   100% { background-position: 100% 50%; }
 }
+/* === NovaLearn Builder 2.0 === */
+.builder-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.builder-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.week-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+.week-card:hover {
+  border-color: rgba(91, 140, 255, 0.6);
+  box-shadow: 0 0 15px rgba(91, 140, 255, 0.2);
+}
+.week-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+.week-input {
+  background: transparent;
+  border: none;
+  color: #e9eefb;
+  font-weight: 600;
+  font-size: 15px;
+  width: 100%;
+}
+.week-input:focus {
+  outline: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+.topic-card {
+  margin: 10px 0 10px 20px;
+  padding: 10px 14px;
+  border-left: 2px solid rgba(91, 140, 255, 0.3);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+.topic-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.block-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.block-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  flex: 1 1 calc(33% - 10px);
+  transition: 0.2s ease;
+}
+.block-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+.block-card.block-video {
+  border-left: 3px solid #5b8cff;
+}
+.block-card.block-quiz {
+  border-left: 3px solid #7b5bff;
+}
+.block-card.block-assignment {
+  border-left: 3px solid #ff9e5b;
+}
+.fab-btn {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  padding: 12px 20px;
+  border-radius: 50px;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(91, 140, 255, 0.3);
+}
+.upload-progress.top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 6px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+}
