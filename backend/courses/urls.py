@@ -1,4 +1,3 @@
-# backend/courses/urls.py
 from rest_framework.routers import DefaultRouter
 from .views import (
     CourseViewSet,
@@ -13,11 +12,7 @@ from .views import (
     AssignmentSubmissionViewSet,
 )
 
-# ✅ Initialize DRF router
 router = DefaultRouter()
-
-# 🏫 Course route
-router.register(r"", CourseViewSet, basename="courses")
 
 # 🧱 Structure routes
 router.register(r"weeks", WeekViewSet, basename="weeks")
@@ -34,5 +29,7 @@ router.register(r"assignments", AssignmentViewSet, basename="assignments")
 router.register(r"assignmenttests", AssignmentTestCaseViewSet, basename="assignmenttests")
 router.register(r"assignmentsubmissions", AssignmentSubmissionViewSet, basename="assignmentsubmissions")
 
-# ✅ Final urlpatterns
+# 🏫 Course route (moved LAST)
+router.register(r"", CourseViewSet, basename="courses")
+
 urlpatterns = router.urls
