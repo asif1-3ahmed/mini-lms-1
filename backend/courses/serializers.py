@@ -247,7 +247,6 @@ class CourseSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "category",
-            "instructor",
             "instructor_name",
             "weeks",
             "created_at",
