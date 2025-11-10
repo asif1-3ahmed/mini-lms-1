@@ -84,6 +84,7 @@ export default function CourseBuilder({ onToast }) {
     setSaving(true);
     try {
       const { data } = await API.post("courses/weeks/", {
+        course: courseId,  // ✅ REQUIRED for backend serializer
         title: `New Week ${weeks.length + 1}`,
         order: weeks.length,
       });
@@ -96,12 +97,13 @@ export default function CourseBuilder({ onToast }) {
     }
   };
 
+
   const renameWeek = async (id, title) => {
     setWeeks((prev) => prev.map((w) => (w.id === id ? { ...w, title } : w)));
     try {
       await API.patch(`courses/weeks/${id}/`, { title });
       onToast?.({ type: "success", text: "Renamed successfully" });
-    } catch {}
+    } catch { }
   };
 
   const addTopic = async (weekId) => {
@@ -144,11 +146,11 @@ export default function CourseBuilder({ onToast }) {
         prev.map((w) =>
           w.id === weekId
             ? {
-                ...w,
-                topics: w.topics.map((t) =>
-                  t.id === topicId ? { ...t, blocks: [...t.blocks, { ...data, type }] } : t
-                ),
-              }
+              ...w,
+              topics: w.topics.map((t) =>
+                t.id === topicId ? { ...t, blocks: [...t.blocks, { ...data, type }] } : t
+              ),
+            }
             : w
         )
       );
@@ -231,13 +233,13 @@ export default function CourseBuilder({ onToast }) {
                                       prev.map((w) =>
                                         w.id === week.id
                                           ? {
-                                              ...w,
-                                              topics: w.topics.map((t) =>
-                                                t.id === topic.id
-                                                  ? { ...t, title: e.target.value }
-                                                  : t
-                                              ),
-                                            }
+                                            ...w,
+                                            topics: w.topics.map((t) =>
+                                              t.id === topic.id
+                                                ? { ...t, title: e.target.value }
+                                                : t
+                                            ),
+                                          }
                                           : w
                                       )
                                     )

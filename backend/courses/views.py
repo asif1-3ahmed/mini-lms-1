@@ -67,7 +67,6 @@ class WeekViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You can only add weeks to your own course.")
         serializer.save()
 
-
 class TopicViewSet(viewsets.ModelViewSet):
     queryset = Topic.objects.all()
     serializer_class = TopicSerializer
