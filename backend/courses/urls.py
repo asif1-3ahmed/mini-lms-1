@@ -1,22 +1,38 @@
 # backend/courses/urls.py
-from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+from .views import (
+    CourseViewSet,
+    WeekViewSet,
+    TopicViewSet,
+    TopicVideoViewSet,
+    QuizViewSet,
+    QuizQuestionViewSet,
+    QuizSubmissionViewSet,
+    AssignmentViewSet,
+    AssignmentTestCaseViewSet,
+    AssignmentSubmissionViewSet,
+)
 
-urlpatterns = [
-    # 🏫 Courses
-    path("", include("courses.course_urls")),
+# ✅ Initialize DRF router
+router = DefaultRouter()
 
-    # 🧱 Course Structure
-    path("weeks/", include("courses.week_urls")),
-    path("topics/", include("courses.topic_urls")),
-    path("topicvideos/", include("courses.topicvideo_urls")),
+# 🏫 Course route
+router.register(r"", CourseViewSet, basename="courses")
 
-    # 🧩 Quizzes
-    path("quizzes/", include("courses.quiz_urls")),
-    path("quizquestions/", include("courses.quizquestion_urls")),
-    path("quizsubmissions/", include("courses.quizsubmission_urls")),
+# 🧱 Structure routes
+router.register(r"weeks", WeekViewSet, basename="weeks")
+router.register(r"topics", TopicViewSet, basename="topics")
+router.register(r"topicvideos", TopicVideoViewSet, basename="topicvideos")
 
-    # 💻 Assignments
-    path("assignments/", include("courses.assignment_urls")),
-    path("assignmenttests/", include("courses.assignmenttestcase_urls")),
-    path("assignmentsubmissions/", include("courses.assignmentsubmission_urls")),
-]
+# 🧩 Quizzes
+router.register(r"quizzes", QuizViewSet, basename="quizzes")
+router.register(r"quizquestions", QuizQuestionViewSet, basename="quizquestions")
+router.register(r"quizsubmissions", QuizSubmissionViewSet, basename="quizsubmissions")
+
+# 💻 Assignments
+router.register(r"assignments", AssignmentViewSet, basename="assignments")
+router.register(r"assignmenttests", AssignmentTestCaseViewSet, basename="assignmenttests")
+router.register(r"assignmentsubmissions", AssignmentSubmissionViewSet, basename="assignmentsubmissions")
+
+# ✅ Final urlpatterns
+urlpatterns = router.urls
