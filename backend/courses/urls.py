@@ -13,7 +13,7 @@ urlpatterns = [
     # 🧩 Quizzes
     path("quizzes/", include("courses.quiz_urls")),
     path("quizquestions/", include("courses.quizquestion_urls")),
-    path("quizsubmissions/", include("courses.quiz_submission_urls")),
+    path("quizsubmissions/", include("courses.quizsubmission_urls")),
 
     # 💻 Assignments
     path("assignments/", include("courses.assignment_urls")),
