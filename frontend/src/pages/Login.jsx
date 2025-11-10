@@ -17,7 +17,15 @@ export default function Login({ onToast }) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       onToast?.({ type: "success", text: "Welcome back!" });
-      navigate(data.user.role === "admin" ? "/admin" : "/student");
+
+      // ✅ Redirect based on role
+      navigate(
+        data.user.role === "admin"
+          ? "/admin"
+          : data.user.role === "instructor"
+          ? "/builder"
+          : "/student"
+      );
     } catch {
       onToast?.({ type: "error", text: "Invalid username or password." });
     } finally {
