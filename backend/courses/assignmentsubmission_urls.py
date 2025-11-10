@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
-from .views import AssignmentSubmissionViewSet
+from courses.views import AssignmentSubmissionViewSet
 
 router = DefaultRouter()
-router.register(r"", AssignmentSubmissionViewSet, basename="assignment_submissions")
+router.register(r"", AssignmentSubmissionViewSet, basename="assignmentsubmissions")
 
 urlpatterns = router.urls

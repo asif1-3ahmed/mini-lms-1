@@ -1,46 +1,22 @@
-from rest_framework.routers import DefaultRouter
-from .views import (
-    CourseViewSet,
-    WeekViewSet,
-    TopicVideoViewSet,
-    TopicViewSet,
-    QuizViewSet,
-    QuizQuestionViewSet,
-    QuizSubmissionViewSet,
-    AssignmentViewSet,
-    AssignmentTestCaseViewSet,
-    AssignmentSubmissionViewSet,
-)
+# backend/courses/urls.py
+from django.urls import include, path
 
-# 🚀 Initialize router
-router = DefaultRouter()
+urlpatterns = [
+    # 🏫 Courses
+    path("", include("courses.course_urls")),
 
-# ===============================
-# 🏫 Course & Legacy Videos
-# ===============================
-router.register(r"", CourseViewSet, basename="courses")                 # main course route
+    # 🧱 Course Structure
+    path("weeks/", include("courses.week_urls")),
+    path("topics/", include("courses.topic_urls")),
+    path("topicvideos/", include("courses.topicvideo_urls")),
 
-# ===============================
-# 🧱 Course Structure (Weeks & Topics)
-# ===============================
-router.register(r"weeks", WeekViewSet, basename="weeks")
+    # 🧩 Quizzes
+    path("quizzes/", include("courses.quiz_urls")),
+    path("quizquestions/", include("courses.quizquestion_urls")),
+    path("quizsubmissions/", include("courses.quiz_submission_urls")),
 
-# ===============================
-# 🧩 Quizzes & Questions
-# ===============================
-router.register(r"quizzes", QuizViewSet, basename="quizzes")
-router.register(r"quizquestions", QuizQuestionViewSet, basename="quizquestions")
-router.register(r"quizsubmissions", QuizSubmissionViewSet, basename="quizsubmissions")
-
-router.register(r"topics", TopicViewSet, basename="topics")  # ✅ missing
-router.register(r"topicvideos", TopicVideoViewSet, basename="topicvideos") 
-
-# ===============================
-# 💻 Assignments & Test Cases
-# ===============================
-router.register(r"assignments", AssignmentViewSet, basename="assignments")
-router.register(r"assignmenttests", AssignmentTestCaseViewSet, basename="assignmenttests")
-router.register(r"assignmentsubmissions", AssignmentSubmissionViewSet, basename="assignmentsubmissions")
-
-# ✅ Include all viewset routes
-urlpatterns = router.urls
+    # 💻 Assignments
+    path("assignments/", include("courses.assignment_urls")),
+    path("assignmenttests/", include("courses.assignmenttestcase_urls")),
+    path("assignmentsubmissions/", include("courses.assignmentsubmission_urls")),
+]
