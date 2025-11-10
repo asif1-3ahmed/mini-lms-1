@@ -48,7 +48,8 @@ class Week(models.Model):
 class Topic(models.Model):
     week = models.ForeignKey(Week, on_delete=models.CASCADE, related_name="topics")
     title = models.CharField(max_length=200, default="Untitled Topic")
-    content = models.TextField(blank=True)
+    subheading = models.CharField(max_length=255, blank=True)  # ✅ NEW (for headings)
+    content = models.TextField(blank=True)                     # rich text (HTML/Markdown)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -63,7 +64,8 @@ class TopicVideo(models.Model):
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="videos")
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    video_file = models.FileField(upload_to="videos/topics/")
+    # ⚠️ RENAMED: was `video_file`; keep the canonical name `video` to match frontend form-data key
+    video = models.FileField(upload_to="videos/topics/")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -95,24 +97,28 @@ class Quiz(models.Model):
         return f"Quiz: {self.title}"
 
 
-# ❓ QUIZ QUESTION
+# ❓ QUIZ QUESTION (A/B/C/D with one correct option)
 class QuizQuestion(models.Model):
-    TEXT = "text"
-    MCQ = "mcq"
-    TYPES = [(TEXT, "Text"), (MCQ, "MCQ")]
-
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
-    prompt = models.TextField()
-    type = models.CharField(max_length=10, choices=TYPES, default=TEXT)
-    choices = models.JSONField(default=list, blank=True)
-    correct_answer = models.TextField(blank=True, default="")
+    # ⚠️ RENAMED: was `prompt`; use `question_text` to match frontend
+    question_text = models.TextField()
+
+    # ⚠️ Replaced generic `choices` JSON with explicit options to match UI
+    option_a = models.CharField(max_length=255, blank=True, default="")
+    option_b = models.CharField(max_length=255, blank=True, default="")
+    option_c = models.CharField(max_length=255, blank=True, default="")
+    option_d = models.CharField(max_length=255, blank=True, default="")
+
+    # kept: 1-letter correct answer (A/B/C/D)
+    correct_option = models.CharField(max_length=1)  # expect "A" | "B" | "C" | "D"
+
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["order", "id"]
 
     def __str__(self):
-        return f"Q: {self.prompt[:40]}..."
+        return f"Q: {self.question_text[:40]}..."
 
 
 # 🧑‍🎓 QUIZ SUBMISSION
@@ -134,12 +140,16 @@ class QuizSubmission(models.Model):
         return f"{self.student} — {self.quiz.title}"
 
 
-# 💻 ASSIGNMENT MODEL
+# 💻 ASSIGNMENT MODEL (with code blocks)
 class Assignment(models.Model):
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="assignments")
     title = models.CharField(max_length=200, default="New Assignment")
     description = models.TextField(blank=True)
     allowed_languages = models.JSONField(default=list, blank=True)
+    # ✅ NEW: structured code blocks for creator UI
+    # each: {"language":"python","starter_code":"print()","editable":true}
+    code_blocks = models.JSONField(default=list, blank=True)
+
     open_at = models.DateTimeField(default=timezone.now)
     due_at = models.DateTimeField(null=True, blank=True)
     autograde_after_days = models.PositiveIntegerField(default=3)

@@ -12,24 +12,34 @@ from .views import (
     AssignmentSubmissionViewSet,
 )
 
+# 🚀 Initialize Router
 router = DefaultRouter()
 
-# 🧱 Structure routes
+# ===============================
+# 🏫 Course Base Route
+# ===============================
+router.register(r"", CourseViewSet, basename="courses")
+
+# ===============================
+# 🧱 Course Structure (Weeks, Topics, Videos)
+# ===============================
 router.register(r"weeks", WeekViewSet, basename="weeks")
 router.register(r"topics", TopicViewSet, basename="topics")
 router.register(r"topicvideos", TopicVideoViewSet, basename="topicvideos")
 
+# ===============================
 # 🧩 Quizzes
+# ===============================
 router.register(r"quizzes", QuizViewSet, basename="quizzes")
 router.register(r"quizquestions", QuizQuestionViewSet, basename="quizquestions")
 router.register(r"quizsubmissions", QuizSubmissionViewSet, basename="quizsubmissions")
 
+# ===============================
 # 💻 Assignments
+# ===============================
 router.register(r"assignments", AssignmentViewSet, basename="assignments")
 router.register(r"assignmenttests", AssignmentTestCaseViewSet, basename="assignmenttests")
 router.register(r"assignmentsubmissions", AssignmentSubmissionViewSet, basename="assignmentsubmissions")
 
-# 🏫 Course route (moved LAST)
-router.register(r"", CourseViewSet, basename="courses")
-
+# ✅ Final urlpatterns export
 urlpatterns = router.urls

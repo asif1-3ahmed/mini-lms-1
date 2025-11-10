@@ -1,4 +1,3 @@
-// frontend/src/pages/CourseBuilder.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   DndContext,
@@ -23,12 +22,11 @@ import {
   Code2,
   BookOpen,
   Loader2,
-  GripVertical,
-  CheckCircle,
   Pencil,
   Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate, useParams } from "react-router-dom";
 import API from "../api";
 
 function SortableRow({ id, children }) {
@@ -47,10 +45,12 @@ function SortableRow({ id, children }) {
 }
 
 export default function CourseBuilder({ onToast }) {
+  const { courseId } = useParams();
   const [weeks, setWeeks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const navigate = useNavigate();
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -84,7 +84,7 @@ export default function CourseBuilder({ onToast }) {
     setSaving(true);
     try {
       const { data } = await API.post("courses/weeks/", {
-        course: courseId,  // ✅ REQUIRED for backend serializer
+        course: courseId,
         title: `New Week ${weeks.length + 1}`,
         order: weeks.length,
       });
@@ -97,13 +97,12 @@ export default function CourseBuilder({ onToast }) {
     }
   };
 
-
   const renameWeek = async (id, title) => {
     setWeeks((prev) => prev.map((w) => (w.id === id ? { ...w, title } : w)));
     try {
       await API.patch(`courses/weeks/${id}/`, { title });
       onToast?.({ type: "success", text: "Renamed successfully" });
-    } catch { }
+    } catch {}
   };
 
   const addTopic = async (weekId) => {
@@ -146,11 +145,11 @@ export default function CourseBuilder({ onToast }) {
         prev.map((w) =>
           w.id === weekId
             ? {
-              ...w,
-              topics: w.topics.map((t) =>
-                t.id === topicId ? { ...t, blocks: [...t.blocks, { ...data, type }] } : t
-              ),
-            }
+                ...w,
+                topics: w.topics.map((t) =>
+                  t.id === topicId ? { ...t, blocks: [...t.blocks, { ...data, type }] } : t
+                ),
+              }
             : w
         )
       );
@@ -163,6 +162,15 @@ export default function CourseBuilder({ onToast }) {
   };
 
   const weekIds = useMemo(() => weeks.map((w) => `week-${w.id}`), [weeks]);
+
+  const handleEdit = (type, id, parentId) => {
+    const routes = {
+      topic: `/builder/topics/${id}/edit`,
+      quiz: `/builder/quiz/${id}/edit`,
+      assignment: `/builder/assignment/${id}/edit`,
+    };
+    navigate(routes[type]);
+  };
 
   if (loading)
     return (
@@ -201,7 +209,7 @@ export default function CourseBuilder({ onToast }) {
                       />
                     </div>
                     <div className="week-actions">
-                      <button className="btn small" onClick={() => addTopic(week.id)}>
+                      <button className="btn small add-topic-btn" onClick={() => addTopic(week.id)}>
                         + Topic
                       </button>
                     </div>
@@ -233,13 +241,13 @@ export default function CourseBuilder({ onToast }) {
                                       prev.map((w) =>
                                         w.id === week.id
                                           ? {
-                                            ...w,
-                                            topics: w.topics.map((t) =>
-                                              t.id === topic.id
-                                                ? { ...t, title: e.target.value }
-                                                : t
-                                            ),
-                                          }
+                                              ...w,
+                                              topics: w.topics.map((t) =>
+                                                t.id === topic.id
+                                                  ? { ...t, title: e.target.value }
+                                                  : t
+                                              ),
+                                            }
                                           : w
                                       )
                                     )
@@ -254,15 +262,23 @@ export default function CourseBuilder({ onToast }) {
                                   </button>
                                   <button
                                     className="btn small"
-                                    onClick={() => addBlock(week.id, topic.id, "quiz")}
+                                    onClick={() => navigate(`/builder/topics/${topic.id}/quiz`)}
                                   >
                                     <BookOpen size={16} /> Quiz
                                   </button>
                                   <button
                                     className="btn small"
-                                    onClick={() => addBlock(week.id, topic.id, "assignment")}
+                                    onClick={() =>
+                                      navigate(`/builder/topics/${topic.id}/assignment`)
+                                    }
                                   >
                                     <Code2 size={16} /> Assignment
+                                  </button>
+                                  <button
+                                    className="btn small"
+                                    onClick={() => handleEdit("topic", topic.id)}
+                                  >
+                                    <Pencil size={16} /> Edit
                                   </button>
                                 </div>
                               </div>
@@ -284,6 +300,14 @@ export default function CourseBuilder({ onToast }) {
                                         <strong>{b.title}</strong>
                                         <p className="small muted">{b.type.toUpperCase()}</p>
                                       </div>
+                                      {b.type !== "video" && (
+                                        <button
+                                          className="btn small"
+                                          onClick={() => handleEdit(b.type, b.id, topic.id)}
+                                        >
+                                          <Pencil size={14} /> Edit
+                                        </button>
+                                      )}
                                     </motion.div>
                                   ))}
                                 </div>

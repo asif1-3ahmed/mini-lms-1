@@ -26,7 +26,7 @@ class TopicVideoSerializer(serializers.ModelSerializer):
             "topic_title",
             "title",
             "description",
-            "video_file",
+            "video",         # ✅ renamed from video_file
             "created_at",
         ]
         read_only_fields = ["id", "created_at", "topic_title"]
@@ -41,16 +41,15 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "quiz",
-            "prompt",
-            "type",
-            "choices",
-            "correct_answer",
+            "question_text",     # ✅ was 'prompt'
+            "option_a",          # ✅ new fields
+            "option_b",
+            "option_c",
+            "option_d",
+            "correct_option",    # ✅ single letter (A/B/C/D)
             "order",
         ]
         read_only_fields = ["id"]
-        extra_kwargs = {
-            "correct_answer": {"write_only": True},
-        }
 
 
 # =====================================================
@@ -145,6 +144,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "allowed_languages",
+            "code_blocks",           # ✅ new field (for code block UI)
             "open_at",
             "due_at",
             "autograde_after_days",
@@ -210,6 +210,7 @@ class TopicSerializer(serializers.ModelSerializer):
             "week",
             "week_title",
             "title",
+            "subheading",   # ✅ added field
             "content",
             "order",
             "videos",
@@ -251,4 +252,4 @@ class CourseSerializer(serializers.ModelSerializer):
             "weeks",
             "created_at",
         ]
-        read_only_fields = ["id", "instructor", "instructor_name", "weeks", "created_at"]
+        read_only_fields = ["id", "instructor_name", "weeks", "created_at"]

@@ -811,3 +811,58 @@ a {
   width: 100%;
   background: rgba(255, 255, 255, 0.08);
 }
+.editor-page {
+  max-width: 900px;
+  margin: 30px auto;
+  display: grid;
+  gap: 16px;
+  padding: 0 20px;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.editor-form {
+  display: grid;
+  gap: 14px;
+}
+
+.label {
+  font-weight: 500;
+  color: #bbb;
+}
+
+.upload-progress {
+  margin-top: 8px;
+  width: 240px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #5b8cff, #7b5bff);
+  transition: width 0.3s;
+}
+.quiz-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}

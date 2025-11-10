@@ -51,9 +51,17 @@ class QuizAdmin(admin.ModelAdmin):
 
 @admin.register(QuizQuestion)
 class QuizQuestionAdmin(admin.ModelAdmin):
-    list_display = ("prompt", "quiz", "type", "order")
-    search_fields = ("prompt",)
-    ordering = ("quiz", "order")
+    list_display = ("short_prompt", "quiz", "question_type")
+
+    def short_prompt(self, obj):
+        """Show a short preview of the question text."""
+        return (obj.prompt[:50] + "...") if len(obj.prompt) > 50 else obj.prompt
+    short_prompt.short_description = "Prompt"
+
+    def question_type(self, obj):
+        """Return the question type safely (since 'type' is reserved)."""
+        return obj.type
+    question_type.short_description = "Type"
 
 
 @admin.register(QuizSubmission)

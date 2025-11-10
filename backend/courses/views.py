@@ -1,10 +1,7 @@
 from rest_framework import viewsets, permissions
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
-from django.db import transaction
-from django.utils import timezone
+from rest_framework.parsers import MultiPartParser, FormParser
 from .models import (
     Course, Week, Topic, TopicVideo,
     Quiz, QuizQuestion, QuizSubmission,
@@ -17,7 +14,14 @@ from .serializers import (
 )
 
 
+# =====================================================
+# ⚙️ Custom Permissions
+# =====================================================
 class IsAdminOrInstructorOrReadOnly(permissions.BasePermission):
+    """
+    Allow read-only for everyone, but restrict write operations
+    to admins or instructors.
+    """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -28,6 +32,9 @@ class IsAdminOrInstructorOrReadOnly(permissions.BasePermission):
         )
 
 
+# =====================================================
+# 🏫 Course ViewSet
+# =====================================================
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     authentication_classes = [TokenAuthentication]
@@ -36,24 +43,31 @@ class CourseViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         qs = Course.objects.select_related("instructor").prefetch_related(
-            "weeks__topics__videos", "weeks__topics__quizzes", "weeks__topics__assignments"
+            "weeks__topics__videos",
+            "weeks__topics__quizzes__questions",
+            "weeks__topics__assignments__tests",
         )
+
         if not user.is_authenticated:
             return Course.objects.none()
+
         role = getattr(user, "role", None)
         if role in ["admin", "instructor"]:
             return qs.filter(instructor=user)
         elif role == "student":
-            return qs
+            return qs.filter(students=user)
         return Course.objects.none()
 
     def perform_create(self, serializer):
         user = self.request.user
         if getattr(user, "role", None) not in ["admin", "instructor"]:
-            raise PermissionDenied("Only instructors can add courses.")
+            raise PermissionDenied("Only instructors can create courses.")
         serializer.save(instructor=user)
 
 
+# =====================================================
+# 🧱 Week ViewSet
+# =====================================================
 class WeekViewSet(viewsets.ModelViewSet):
     queryset = Week.objects.all()
     serializer_class = WeekSerializer
@@ -64,14 +78,27 @@ class WeekViewSet(viewsets.ModelViewSet):
         course = serializer.validated_data.get("course")
         user = self.request.user
         if course.instructor != user:
-            raise PermissionDenied("You can only add weeks to your own course.")
+            raise PermissionDenied("You can only add weeks to your own courses.")
         serializer.save()
 
+
+# =====================================================
+# 📘 Topic ViewSet
+# =====================================================
 class TopicViewSet(viewsets.ModelViewSet):
-    queryset = Topic.objects.all()
+    queryset = Topic.objects.select_related("week", "week__course").prefetch_related(
+        "videos", "quizzes", "assignments"
+    )
     serializer_class = TopicSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminOrInstructorOrReadOnly]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        week_id = self.request.query_params.get("week")
+        if week_id:
+            qs = qs.filter(week_id=week_id)
+        return qs
 
     def perform_create(self, serializer):
         week = serializer.validated_data.get("week")
@@ -81,9 +108,30 @@ class TopicViewSet(viewsets.ModelViewSet):
         serializer.save()
 
 
+# =====================================================
+# 🎞 Topic Video ViewSet
+# =====================================================
 class TopicVideoViewSet(viewsets.ModelViewSet):
-    queryset = TopicVideo.objects.all()
+    queryset = TopicVideo.objects.select_related("topic", "topic__week")
     serializer_class = TopicVideoSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAdminOrInstructorOrReadOnly]
+    parser_classes = [MultiPartParser, FormParser]  # ✅ for video uploads
+
+    def perform_create(self, serializer):
+        topic = serializer.validated_data.get("topic")
+        user = self.request.user
+        if topic.week.course.instructor != user:
+            raise PermissionDenied("You can only upload videos to your own course.")
+        serializer.save()
+
+
+# =====================================================
+# 🧩 Quiz ViewSet
+# =====================================================
+class QuizViewSet(viewsets.ModelViewSet):
+    queryset = Quiz.objects.select_related("topic", "topic__week").prefetch_related("questions")
+    serializer_class = QuizSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminOrInstructorOrReadOnly]
 
@@ -91,39 +139,15 @@ class TopicVideoViewSet(viewsets.ModelViewSet):
         topic = serializer.validated_data.get("topic")
         user = self.request.user
         if topic.week.course.instructor != user:
-            raise PermissionDenied("You can only add videos to your own course.")
+            raise PermissionDenied("You can only add quizzes to your own topics.")
         serializer.save()
 
 
-class QuizViewSet(viewsets.ModelViewSet):
-    queryset = Quiz.objects.all()
-    serializer_class = QuizSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAdminOrInstructorOrReadOnly]
-
-
-class AssignmentViewSet(viewsets.ModelViewSet):
-    queryset = Assignment.objects.all()
-    serializer_class = AssignmentSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAdminOrInstructorOrReadOnly]
-
-
-class QuizSubmissionViewSet(viewsets.ModelViewSet):
-    queryset = QuizSubmission.objects.all()
-    serializer_class = QuizSubmissionSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
-
-class AssignmentSubmissionViewSet(viewsets.ModelViewSet):
-    queryset = AssignmentSubmission.objects.all()
-    serializer_class = AssignmentSubmissionSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
+# =====================================================
+# ❓ Quiz Question ViewSet
+# =====================================================
 class QuizQuestionViewSet(viewsets.ModelViewSet):
-    queryset = QuizQuestion.objects.all()
+    queryset = QuizQuestion.objects.select_related("quiz", "quiz__topic")
     serializer_class = QuizQuestionSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminOrInstructorOrReadOnly]
@@ -134,9 +158,40 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
         if quiz.topic.week.course.instructor != user:
             raise PermissionDenied("You can only add questions to your own quiz.")
         serializer.save()
-        
+
+
+# =====================================================
+# 🧠 Quiz Submission ViewSet
+# =====================================================
+class QuizSubmissionViewSet(viewsets.ModelViewSet):
+    queryset = QuizSubmission.objects.select_related("quiz", "student")
+    serializer_class = QuizSubmissionSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+
+# =====================================================
+# 💻 Assignment ViewSet
+# =====================================================
+class AssignmentViewSet(viewsets.ModelViewSet):
+    queryset = Assignment.objects.select_related("topic", "topic__week").prefetch_related("tests")
+    serializer_class = AssignmentSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAdminOrInstructorOrReadOnly]
+
+    def perform_create(self, serializer):
+        topic = serializer.validated_data.get("topic")
+        user = self.request.user
+        if topic.week.course.instructor != user:
+            raise PermissionDenied("You can only add assignments to your own course.")
+        serializer.save()
+
+
+# =====================================================
+# 🧪 Assignment Test Case ViewSet
+# =====================================================
 class AssignmentTestCaseViewSet(viewsets.ModelViewSet):
-    queryset = AssignmentTestCase.objects.all().order_by("order")
+    queryset = AssignmentTestCase.objects.select_related("assignment", "assignment__topic")
     serializer_class = AssignmentTestCaseSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminOrInstructorOrReadOnly]
@@ -145,5 +200,15 @@ class AssignmentTestCaseViewSet(viewsets.ModelViewSet):
         assignment = serializer.validated_data.get("assignment")
         user = self.request.user
         if assignment.topic.week.course.instructor != user:
-            raise PermissionDenied("You can only add test cases to your own assignment.")
+            raise PermissionDenied("You can only add test cases to your own assignments.")
         serializer.save()
+
+
+# =====================================================
+# ✍️ Assignment Submission ViewSet
+# =====================================================
+class AssignmentSubmissionViewSet(viewsets.ModelViewSet):
+    queryset = AssignmentSubmission.objects.select_related("assignment", "student")
+    serializer_class = AssignmentSubmissionSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
