@@ -75,11 +75,20 @@ class WeekViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrInstructorOrReadOnly]
 
     def perform_create(self, serializer):
-        course = serializer.validated_data.get("course")
+        course_id = self.request.data.get("course")
+        if not course_id:
+            raise PermissionDenied("Course ID is required.")
+
+        try:
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            raise PermissionDenied("Invalid course ID.")
+
         user = self.request.user
         if course.instructor != user:
             raise PermissionDenied("You can only add weeks to your own courses.")
-        serializer.save()
+
+        serializer.save(course=course)
 
 
 # =====================================================
