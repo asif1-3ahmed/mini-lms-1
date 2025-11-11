@@ -60,13 +60,17 @@ class CourseViewSet(viewsets.ModelViewSet):
             return CourseListSerializer
         return CourseDetailSerializer
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        if not user.is_authenticated:
-            raise PermissionDenied("Authentication required.")
-        if getattr(user, "role", None) not in ["admin", "instructor"]:
-            raise PermissionDenied("Only instructors can create courses.")
-        serializer.save(instructor=user)
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            import traceback
+            print("🔥 COURSE LIST ERROR:", e)
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=500)
+
 
 # =====================================================
 # 🧱 Week ViewSet
