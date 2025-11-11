@@ -66,7 +66,10 @@ class CourseViewSet(viewsets.ModelViewSet):
         role = getattr(user, "role", None) or ("admin" if user.is_staff else "student")
         print("🔹 Role:", role)
 
-        if role in ["admin", "instructor"]:
+        # ✅ Admin should see all courses, not just their own
+        if role == "admin" or user.is_staff:
+            return qs
+        elif role == "instructor":
             return qs.filter(instructor=user)
         elif role == "student":
             return qs.filter(students=user)
@@ -78,7 +81,7 @@ class CourseViewSet(viewsets.ModelViewSet):
             print("📄 Using CourseListSerializer")
             return CourseListSerializer
         print("📘 Using CourseDetailSerializer")
-        return CourseDetailSerializer  # ✅ fixed indentation!
+        return CourseDetailSerializer
 
     def list(self, request, *args, **kwargs):
         print("🚀 /api/courses/ called by:", request.user)
@@ -93,6 +96,21 @@ class CourseViewSet(viewsets.ModelViewSet):
             print("🔥 CRASH IN COURSE LIST:", str(e))
             traceback.print_exc()
             return Response({"error": str(e)}, status=500)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        user_role = getattr(user, "role", None)
+
+        print(f"🧩 Creating course as: {user.username} ({user_role})")
+
+        if not user.is_authenticated:
+            raise PermissionDenied("You must be logged in to create a course.")
+
+        if not (user.is_staff or user_role in ["admin", "instructor"]):
+            raise PermissionDenied("Only instructors or admins can create courses.")
+
+        serializer.save(instructor=user)
+        print(f"✅ Course created by {user.username}")
 
 
 # =====================================================
