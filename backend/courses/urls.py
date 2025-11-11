@@ -16,11 +16,6 @@ from .views import (
 router = DefaultRouter()
 
 # ===============================
-# 🏫 Course Base Route
-# ===============================
-router.register(r"", CourseViewSet, basename="courses")
-
-# ===============================
 # 🧱 Course Structure (Weeks, Topics, Videos)
 # ===============================
 router.register(r"weeks", WeekViewSet, basename="weeks")
@@ -41,5 +36,9 @@ router.register(r"assignments", AssignmentViewSet, basename="assignments")
 router.register(r"assignmenttests", AssignmentTestCaseViewSet, basename="assignmenttests")
 router.register(r"assignmentsubmissions", AssignmentSubmissionViewSet, basename="assignmentsubmissions")
 
-# ✅ Final urlpatterns export
+# ===============================
+# 🏫 Course Base Route — keep LAST
+# ===============================
+router.register(r"", CourseViewSet, basename="courses")
+
 urlpatterns = router.urls
