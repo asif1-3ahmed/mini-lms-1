@@ -16,20 +16,21 @@ from .models import (
 # 🎞️ Topic Video Serializer
 # =====================================================
 class TopicVideoSerializer(serializers.ModelSerializer):
+    topic_id = serializers.PrimaryKeyRelatedField(source="topic", read_only=True)
     topic_title = serializers.ReadOnlyField(source="topic.title")
 
     class Meta:
         model = TopicVideo
         fields = [
             "id",
-            "topic",
+            "topic_id",
             "topic_title",
             "title",
             "description",
-            "video",  # ✅ matches model + frontend form key
+            "video",
             "created_at",
         ]
-        read_only_fields = ["id", "created_at", "topic_title"]
+        read_only_fields = ["id", "created_at", "topic_id", "topic_title"]
 
 
 # =====================================================
@@ -41,12 +42,12 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "quiz",
-            "question_text",  # ✅ was 'prompt'
+            "question_text",
             "option_a",
             "option_b",
             "option_c",
             "option_d",
-            "correct_option",  # ✅ single letter (A/B/C/D)
+            "correct_option",
             "order",
         ]
         read_only_fields = ["id"]
@@ -56,6 +57,7 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
 # 🧩 Quiz Serializer
 # =====================================================
 class QuizSerializer(serializers.ModelSerializer):
+    topic_id = serializers.PrimaryKeyRelatedField(source="topic", read_only=True)
     topic_title = serializers.ReadOnlyField(source="topic.title")
     questions = QuizQuestionSerializer(many=True, read_only=True)
 
@@ -63,7 +65,7 @@ class QuizSerializer(serializers.ModelSerializer):
         model = Quiz
         fields = [
             "id",
-            "topic",
+            "topic_id",
             "topic_title",
             "title",
             "instructions",
@@ -73,7 +75,7 @@ class QuizSerializer(serializers.ModelSerializer):
             "questions",
             "created_at",
         ]
-        read_only_fields = ["id", "created_at", "topic_title", "questions"]
+        read_only_fields = ["id", "created_at", "topic_id", "topic_title", "questions"]
 
 
 # =====================================================
@@ -112,26 +114,28 @@ class QuizSubmissionSerializer(serializers.ModelSerializer):
 # 🧪 Assignment Test Case Serializer
 # =====================================================
 class AssignmentTestCaseSerializer(serializers.ModelSerializer):
+    assignment_id = serializers.PrimaryKeyRelatedField(source="assignment", read_only=True)
     assignment_title = serializers.ReadOnlyField(source="assignment.title")
 
     class Meta:
         model = AssignmentTestCase
         fields = [
             "id",
-            "assignment",
+            "assignment_id",
             "assignment_title",
             "input_data",
             "expected_output",
             "weight",
             "order",
         ]
-        read_only_fields = ["id", "assignment_title"]
+        read_only_fields = ["id", "assignment_id", "assignment_title"]
 
 
 # =====================================================
 # 💻 Assignment Serializer
 # =====================================================
 class AssignmentSerializer(serializers.ModelSerializer):
+    topic_id = serializers.PrimaryKeyRelatedField(source="topic", read_only=True)
     topic_title = serializers.ReadOnlyField(source="topic.title")
     tests = AssignmentTestCaseSerializer(many=True, read_only=True)
 
@@ -139,12 +143,12 @@ class AssignmentSerializer(serializers.ModelSerializer):
         model = Assignment
         fields = [
             "id",
-            "topic",
+            "topic_id",
             "topic_title",
             "title",
             "description",
             "allowed_languages",
-            "code_blocks",  # ✅ new JSON field
+            "code_blocks",
             "open_at",
             "due_at",
             "autograde_after_days",
@@ -152,52 +156,14 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "tests",
             "created_at",
         ]
-        read_only_fields = ["id", "topic_title", "tests", "created_at"]
-
-
-# =====================================================
-# ✍️ Assignment Submission Serializer
-# =====================================================
-class AssignmentSubmissionSerializer(serializers.ModelSerializer):
-    assignment_title = serializers.ReadOnlyField(source="assignment.title")
-    student_name = serializers.ReadOnlyField(source="student.username")
-
-    class Meta:
-        model = AssignmentSubmission
-        fields = [
-            "id",
-            "assignment",
-            "assignment_title",
-            "student",
-            "student_name",
-            "code",
-            "language",
-            "created_at",
-            "status",
-            "grade",
-            "details",
-            "autograde_at",
-            "reveal_at",
-            "revealed",
-        ]
-        read_only_fields = [
-            "id",
-            "created_at",
-            "status",
-            "grade",
-            "details",
-            "autograde_at",
-            "reveal_at",
-            "revealed",
-            "assignment_title",
-            "student_name",
-        ]
+        read_only_fields = ["id", "topic_id", "topic_title", "tests", "created_at"]
 
 
 # =====================================================
 # 📘 Topic Serializer
 # =====================================================
 class TopicSerializer(serializers.ModelSerializer):
+    week_id = serializers.PrimaryKeyRelatedField(source="week", read_only=True)
     week_title = serializers.ReadOnlyField(source="week.title")
     videos = TopicVideoSerializer(many=True, read_only=True)
     quizzes = QuizSerializer(many=True, read_only=True)
@@ -207,36 +173,48 @@ class TopicSerializer(serializers.ModelSerializer):
         model = Topic
         fields = [
             "id",
-            "week",
+            "week_id",
             "week_title",
             "title",
-            "subheading",  # ✅ new field
+            "subheading",
             "content",
             "order",
             "videos",
             "quizzes",
             "assignments",
         ]
-        read_only_fields = ["id", "week_title", "videos", "quizzes", "assignments"]
+        read_only_fields = ["id", "week_id", "week_title", "videos", "quizzes", "assignments"]
 
 
 # =====================================================
 # 🧱 Week Serializer
 # =====================================================
 class WeekSerializer(serializers.ModelSerializer):
+    course_id = serializers.PrimaryKeyRelatedField(source="course", read_only=True)
     course_title = serializers.ReadOnlyField(source="course.title")
     topics = TopicSerializer(many=True, read_only=True)
 
     class Meta:
         model = Week
-        fields = ["id", "course", "course_title", "title", "order", "topics"]
-        read_only_fields = ["id", "course_title", "topics"]
+        fields = ["id", "course_id", "course_title", "title", "order", "topics"]
+        read_only_fields = ["id", "course_id", "course_title", "topics"]
 
 
 # =====================================================
-# 🏫 Course Serializer
+# 🏫 Course Serializers
 # =====================================================
-class CourseSerializer(serializers.ModelSerializer):
+
+# 1️⃣ Light list version (used in GET /api/courses/)
+class CourseListSerializer(serializers.ModelSerializer):
+    instructor_name = serializers.ReadOnlyField(source="instructor.username")
+
+    class Meta:
+        model = Course
+        fields = ["id", "title", "category", "instructor_name", "created_at"]
+
+
+# 2️⃣ Full detail version (used in GET /api/courses/{id}/)
+class CourseDetailSerializer(serializers.ModelSerializer):
     instructor = serializers.PrimaryKeyRelatedField(read_only=True)
     instructor_name = serializers.ReadOnlyField(source="instructor.username")
     weeks = WeekSerializer(many=True, read_only=True)
@@ -248,10 +226,9 @@ class CourseSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "category",
-            "instructor",         # ✅ include actual field (read-only)
+            "instructor",
             "instructor_name",
             "weeks",
             "created_at",
         ]
         read_only_fields = ["id", "instructor", "instructor_name", "weeks", "created_at"]
-

@@ -33,54 +33,35 @@ class IsAdminOrInstructorOrReadOnly(permissions.BasePermission):
 # 🏫 Course ViewSet
 # =====================================================
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.all()  # default queryset (used by retrieve)
-    serializer_class = CourseSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminOrInstructorOrReadOnly]
 
     def get_queryset(self):
         user = self.request.user
-
-        # 🔎 TEMP debug to terminal
-        print("GET /api/courses/ -> user:", user, "auth:", user.is_authenticated)
-
         if not user.is_authenticated:
             return Course.objects.none()
 
-        # Safe fallback if role doesn't exist on your User model
-        role = getattr(user, "role", None) or ("admin" if getattr(user, "is_staff", False) else "student")
-        print("Resolved role:", role)
+        qs = Course.objects.select_related("instructor").prefetch_related("weeks__topics")
+        role = getattr(user, "role", None) or ("admin" if user.is_staff else "student")
 
-        try:
-            # Keep prefetch/select_related fast but safe
-            qs = (
-                Course.objects
-                .select_related("instructor")
-                .prefetch_related(
-                    "weeks__topics__videos",
-                    "weeks__topics__quizzes__questions",
-                    "weeks__topics__assignments__tests",
-                )
-            )
+        if role in ["admin", "instructor"]:
+            return qs.filter(instructor=user)
+        elif role == "student":
+            return qs.filter(students=user)
+        return Course.objects.none()
 
-            if role in ["admin", "instructor"]:
-                qs = qs.filter(instructor=user)
-            elif role == "student":
-                qs = qs.filter(students=user)
-            else:
-                qs = Course.objects.none()
+    def get_serializer_class(self):
+        if self.action == "list":
+            return CourseListSerializer
+        return CourseDetailSerializer
 
-            # 🔎 TEMP: tell us how many we’re returning
-            print("Courses count to return:", qs.count())
-            return qs
-
-        except Exception as e:
-            # 🔎 Show exact error in server logs, but don't crash the API
-            import traceback
-            print("ERROR in CourseViewSet.get_queryset():", e)
-            traceback.print_exc()
-            # Return empty set so the API returns 200 [] instead of 500
-            return Course.objects.none()
+    def perform_create(self, serializer):
+        user = self.request.user
+        if not user.is_authenticated:
+            raise PermissionDenied("Authentication required.")
+        if getattr(user, "role", None) not in ["admin", "instructor"]:
+            raise PermissionDenied("Only instructors can create courses.")
+        serializer.save(instructor=user)
 
     def perform_create(self, serializer):
         user = self.request.user
