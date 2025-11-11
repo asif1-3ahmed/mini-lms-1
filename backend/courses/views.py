@@ -27,7 +27,6 @@ from .serializers import (
 # ⚙️ Custom Permissions
 # =====================================================
 class IsAdminOrInstructorOrReadOnly(permissions.BasePermission):
-    """Allow read-only for everyone, but restrict write operations to admins/instructors."""
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -36,7 +35,6 @@ class IsAdminOrInstructorOrReadOnly(permissions.BasePermission):
             user.is_authenticated
             and getattr(user, "role", None) in ["admin", "instructor"]
         )
-
 
 # =====================================================
 # 🏫 Course ViewSet
@@ -49,10 +47,8 @@ class CourseViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if not user.is_authenticated:
             return Course.objects.none()
-
         qs = Course.objects.select_related("instructor").prefetch_related("weeks__topics")
         role = getattr(user, "role", None) or ("admin" if user.is_staff else "student")
-
         if role in ["admin", "instructor"]:
             return qs.filter(instructor=user)
         elif role == "student":
@@ -71,13 +67,6 @@ class CourseViewSet(viewsets.ModelViewSet):
         if getattr(user, "role", None) not in ["admin", "instructor"]:
             raise PermissionDenied("Only instructors can create courses.")
         serializer.save(instructor=user)
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        if getattr(user, "role", None) not in ["admin", "instructor"]:
-            raise PermissionDenied("Only instructors can create courses.")
-        serializer.save(instructor=user)
-
 
 # =====================================================
 # 🧱 Week ViewSet
