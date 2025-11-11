@@ -51,12 +51,23 @@ class CourseViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return Course.objects.none()
 
-        role = getattr(user, "role", None)
+        role = getattr(user, "role", None) or (
+            "admin" if user.is_staff else "student"
+        )
+
         if role in ["admin", "instructor"]:
             return qs.filter(instructor=user)
         elif role == "student":
             return qs.filter(students=user)
         return Course.objects.none()
+
+
+    if role in ["admin", "instructor"]:
+        return qs.filter(instructor=user)
+    elif role == "student":
+        return qs.filter(students=user)
+    return Course.objects.none()
+
 
     def perform_create(self, serializer):
         user = self.request.user
