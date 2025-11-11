@@ -18,10 +18,7 @@ from .serializers import (
 # ⚙️ Custom Permissions
 # =====================================================
 class IsAdminOrInstructorOrReadOnly(permissions.BasePermission):
-    """
-    Allow read-only for everyone, but restrict write operations
-    to admins or instructors.
-    """
+    """Allow read-only for everyone, but restrict write operations to admins/instructors."""
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -51,23 +48,13 @@ class CourseViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return Course.objects.none()
 
-        role = getattr(user, "role", None) or (
-            "admin" if user.is_staff else "student"
-        )
+        role = getattr(user, "role", None) or ("admin" if user.is_staff else "student")
 
         if role in ["admin", "instructor"]:
             return qs.filter(instructor=user)
         elif role == "student":
             return qs.filter(students=user)
         return Course.objects.none()
-
-
-    if role in ["admin", "instructor"]:
-        return qs.filter(instructor=user)
-    elif role == "student":
-        return qs.filter(students=user)
-    return Course.objects.none()
-
 
     def perform_create(self, serializer):
         user = self.request.user
