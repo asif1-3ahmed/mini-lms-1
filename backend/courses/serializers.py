@@ -232,3 +232,40 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "instructor", "instructor_name", "weeks", "created_at"]
+# =====================================================
+# ✍️ Assignment Submission Serializer
+# =====================================================
+class AssignmentSubmissionSerializer(serializers.ModelSerializer):
+    assignment_title = serializers.ReadOnlyField(source="assignment.title")
+    student_name = serializers.ReadOnlyField(source="student.username")
+
+    class Meta:
+        model = AssignmentSubmission
+        fields = [
+            "id",
+            "assignment",
+            "assignment_title",
+            "student",
+            "student_name",
+            "code",
+            "language",
+            "created_at",
+            "status",
+            "grade",
+            "details",
+            "autograde_at",
+            "reveal_at",
+            "revealed",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "status",
+            "grade",
+            "details",
+            "autograde_at",
+            "reveal_at",
+            "revealed",
+            "assignment_title",
+            "student_name",
+        ]

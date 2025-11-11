@@ -8,10 +8,19 @@ from .models import (
     Assignment, AssignmentTestCase, AssignmentSubmission
 )
 from .serializers import (
-    CourseSerializer, WeekSerializer, TopicSerializer, TopicVideoSerializer,
-    QuizSerializer, QuizQuestionSerializer, QuizSubmissionSerializer,
-    AssignmentSerializer, AssignmentTestCaseSerializer, AssignmentSubmissionSerializer
+    CourseListSerializer,
+    CourseDetailSerializer,
+    WeekSerializer,
+    TopicSerializer,
+    TopicVideoSerializer,
+    QuizSerializer,
+    QuizQuestionSerializer,
+    QuizSubmissionSerializer,
+    AssignmentSerializer,
+    AssignmentTestCaseSerializer,
+    AssignmentSubmissionSerializer,
 )
+
 
 
 # =====================================================
