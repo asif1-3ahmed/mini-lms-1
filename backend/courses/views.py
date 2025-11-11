@@ -26,50 +26,52 @@ from .serializers import (
 # =====================================================
 # ⚙️ Custom Permissions
 # =====================================================
-class IsAdminOrInstructorOrReadOnly(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        user = request.user
-        return (
-            user.is_authenticated
-            and getattr(user, "role", None) in ["admin", "instructor"]
-        )
+from rest_framework.response import Response
+import traceback
 
-# =====================================================
-# 🏫 Course ViewSet
-# =====================================================
 class CourseViewSet(viewsets.ModelViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminOrInstructorOrReadOnly]
 
     def get_queryset(self):
         user = self.request.user
+        print("🧠 get_queryset called for:", user)
         if not user.is_authenticated:
+            print("⚠️ User not authenticated")
             return Course.objects.none()
+
         qs = Course.objects.select_related("instructor").prefetch_related("weeks__topics")
         role = getattr(user, "role", None) or ("admin" if user.is_staff else "student")
+        print("🔹 Role:", role)
         if role in ["admin", "instructor"]:
             return qs.filter(instructor=user)
         elif role == "student":
             return qs.filter(students=user)
+        print("❌ No role match, returning none")
         return Course.objects.none()
 
     def get_serializer_class(self):
         if self.action == "list":
+            print("📄 Using CourseListSerializer")
             return CourseListSerializer
+        print("📘 Using CourseDetailSerializer")
         return CourseDetailSerializer
 
     def list(self, request, *args, **kwargs):
+        print("🚀 /api/courses/ called by:", request.user)
         try:
             queryset = self.get_queryset()
-            serializer = self.get_serializer(queryset, many=True)
+            print(f"📦 Courses to serialize: {queryset.count()}")
+            serializer_class = self.get_serializer_class()
+            serializer = serializer_class(queryset, many=True)
+            print("✅ Serialization OK — returning data")
             return Response(serializer.data)
         except Exception as e:
-            import traceback
-            print("🔥 COURSE LIST ERROR:", e)
+            print("🔥 CRASH IN COURSE LIST:", str(e))
             traceback.print_exc()
-            return Response({"error": str(e)}, status=500)
+            return Response(
+                {"error": str(e)}, status=500
+            )
 
 
 # =====================================================
