@@ -237,6 +237,7 @@ class WeekSerializer(serializers.ModelSerializer):
 # 🏫 Course Serializer
 # =====================================================
 class CourseSerializer(serializers.ModelSerializer):
+    instructor = serializers.PrimaryKeyRelatedField(read_only=True)
     instructor_name = serializers.ReadOnlyField(source="instructor.username")
     weeks = WeekSerializer(many=True, read_only=True)
 
@@ -247,8 +248,10 @@ class CourseSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "category",
+            "instructor",         # ✅ include actual field (read-only)
             "instructor_name",
             "weeks",
             "created_at",
         ]
-        read_only_fields = ["id", "instructor_name", "weeks", "created_at"]
+        read_only_fields = ["id", "instructor", "instructor_name", "weeks", "created_at"]
+
